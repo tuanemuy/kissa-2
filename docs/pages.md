@@ -242,7 +242,7 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
     - `updateUserProfile`: ユーザープロフィールを更新する
     - `updateNotificationSettings`: 通知設定を更新する
     - `updatePrivacySettings`: プライバシー設定を更新する
-    - `changeUserPassword`: ユーザーパスワードを変更する
+    - `updateUserPassword`: ユーザーパスワードを更新する
 - **コンポーネント**:
     - `ProfileForm`: プロフィール編集
     - `NotificationSettings`: 通知設定
@@ -308,7 +308,7 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **ユースケース**:
     - `getEditorPlaces`: 編集者が管理する場所一覧を取得する
     - `deletePlace`: 場所を削除する
-    - `getPlacePermissions`: 場所の編集権限を取得する
+    - `getPlaceEditPermissions`: 場所の編集権限を取得する
     - `updatePlaceStatus`: 場所の公開状態を更新する
 - **コンポーネント**:
     - `PlaceManagementList`: 場所管理一覧
@@ -341,7 +341,7 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **ユースケース**:
     - `inviteEditor`: 編集者を招待する
     - `sendEditorInvitation`: 編集者招待メールを送信する
-    - `getPlacePermissions`: 場所の権限一覧を取得する
+    - `getPlacePermissionsList`: 場所の権限一覧を取得する
     - `updateEditorPermissions`: 編集者権限を更新する
     - `removeEditorPermission`: 編集者権限を削除する
     - `getSharedPlaces`: 共有中の場所一覧を取得する
@@ -358,7 +358,7 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **レイアウト**: UserLayout
 - **ユースケース**:
     - `getUserSubscription`: ユーザーのサブスクリプション情報を取得する
-    - `updateSubscriptionPlan`: サブスクリプションプランを変更する
+    - `updateSubscriptionPlan`: サブスクリプションプランを更新する
     - `updatePaymentMethod`: 支払い方法を更新する
     - `getBillingHistory`: 請求履歴を取得する
     - `getUserUsageMetrics`: 使用量統計を取得する
