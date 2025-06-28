@@ -30,6 +30,7 @@ import {
   placeWithStatsSchema,
 } from "@/core/domain/place/types";
 import type { Coordinates } from "@/core/domain/region/types";
+import { createBoundingBox, filterByDistance } from "@/lib/utils";
 import { validate } from "@/lib/validation";
 import type { Database } from "./client";
 import {
@@ -328,16 +329,21 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
       ].filter((f) => f !== undefined);
 
       // Add location filter if provided
+      let locationFilter:
+        | {
+            coordinates: { latitude: number; longitude: number };
+            radiusKm: number;
+          }
+        | undefined;
       if (filter?.location) {
         const { coordinates, radiusKm } = filter.location;
-        const latDelta = radiusKm / 111;
-        const lngDelta =
-          radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
+        locationFilter = { coordinates, radiusKm };
 
-        const minLat = coordinates.latitude - latDelta;
-        const maxLat = coordinates.latitude + latDelta;
-        const minLng = coordinates.longitude - lngDelta;
-        const maxLng = coordinates.longitude + lngDelta;
+        // Use accurate bounding box as preliminary filter for performance
+        const { minLat, maxLat, minLng, maxLng } = createBoundingBox(
+          coordinates,
+          radiusKm,
+        );
 
         filters.push(
           sql`${places.latitude} >= ${minLat} AND ${places.latitude} <= ${maxLat} AND ${places.longitude} >= ${minLng} AND ${places.longitude} <= ${maxLng}`,
@@ -452,8 +458,18 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
         }
       }
 
+      // Apply accurate distance filtering if location filter was used
+      let finalItems = placesWithStats;
+      if (locationFilter) {
+        finalItems = filterByDistance(
+          placesWithStats,
+          locationFilter.coordinates,
+          locationFilter.radiusKm,
+        );
+      }
+
       return ok({
-        items: placesWithStats,
+        items: finalItems,
         count: Number(countResult[0]?.count || 0),
       });
     } catch (error) {
@@ -488,18 +504,28 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
         filters.push(eq(places.category, category));
       }
 
+      let searchLocationFilter:
+        | {
+            coordinates: { latitude: number; longitude: number };
+            radiusKm: number;
+          }
+        | undefined;
       if (location) {
         const { coordinates, radiusKm } = location;
-        const latDelta = radiusKm / 111;
-        const lngDelta =
-          radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
+        searchLocationFilter = { coordinates, radiusKm };
+
+        // Use accurate bounding box as preliminary filter for performance
+        const { minLat, maxLat, minLng, maxLng } = createBoundingBox(
+          coordinates,
+          radiusKm,
+        );
 
         filters.push(
           and(
-            sql`${places.latitude} >= ${coordinates.latitude - latDelta}`,
-            sql`${places.latitude} <= ${coordinates.latitude + latDelta}`,
-            sql`${places.longitude} >= ${coordinates.longitude - lngDelta}`,
-            sql`${places.longitude} <= ${coordinates.longitude + lngDelta}`,
+            sql`${places.latitude} >= ${minLat}`,
+            sql`${places.latitude} <= ${maxLat}`,
+            sql`${places.longitude} >= ${minLng}`,
+            sql`${places.longitude} <= ${maxLng}`,
           ),
         );
       }
@@ -586,8 +612,18 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
         }
       }
 
+      // Apply accurate distance filtering if location filter was used
+      let finalItems = placesWithStats;
+      if (searchLocationFilter) {
+        finalItems = filterByDistance(
+          placesWithStats,
+          searchLocationFilter.coordinates,
+          searchLocationFilter.radiusKm,
+        );
+      }
+
       return ok({
-        items: placesWithStats,
+        items: finalItems,
         count: Number(countResult[0]?.count || 0),
       });
     } catch (error) {

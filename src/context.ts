@@ -1,16 +1,16 @@
 import { err, type Result } from "neverthrow";
 import { z } from "zod/v4";
 import {
+  DrizzlePgliteCheckinPhotoRepository,
+  DrizzlePgliteCheckinRepository,
+} from "@/core/adapters/drizzlePglite/checkinRepository";
+import {
   getDatabase,
   withTransaction,
 } from "@/core/adapters/drizzlePglite/client";
 import {
-  DrizzlePgliteCheckinRepository,
-  DrizzlePgliteCheckinPhotoRepository,
-} from "@/core/adapters/drizzlePglite/checkinRepository";
-import {
-  DrizzlePglitePlaceRepository,
   DrizzlePglitePlacePermissionRepository,
+  DrizzlePglitePlaceRepository,
 } from "@/core/adapters/drizzlePglite/placeRepository";
 import { DrizzlePgliteRegionRepository } from "@/core/adapters/drizzlePglite/regionRepository";
 import {

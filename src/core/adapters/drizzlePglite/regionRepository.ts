@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import { err, ok, type Result } from "neverthrow";
 import {
@@ -27,6 +27,7 @@ import {
   regionSchema,
   regionWithStatsSchema,
 } from "@/core/domain/region/types";
+import { createBoundingBox, filterByDistance } from "@/lib/utils";
 import { validate } from "@/lib/validation";
 import type { Database } from "./client";
 import { regionFavorites, regionPins, regions } from "./schema";
@@ -277,17 +278,21 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
       ].filter((f) => f !== undefined);
 
       // Add location filter if provided
+      let locationFilter:
+        | {
+            coordinates: { latitude: number; longitude: number };
+            radiusKm: number;
+          }
+        | undefined;
       if (filter?.location) {
         const { coordinates, radiusKm } = filter.location;
-        // Simple bounding box filter (could be enhanced with proper geospatial queries)
-        const latDelta = radiusKm / 111; // Approximate degrees per km
-        const lngDelta =
-          radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
+        locationFilter = { coordinates, radiusKm };
 
-        const minLat = coordinates.latitude - latDelta;
-        const maxLat = coordinates.latitude + latDelta;
-        const minLng = coordinates.longitude - lngDelta;
-        const maxLng = coordinates.longitude + lngDelta;
+        // Use accurate bounding box as preliminary filter for performance
+        const { minLat, maxLat, minLng, maxLng } = createBoundingBox(
+          coordinates,
+          radiusKm,
+        );
 
         filters.push(
           sql`${regions.latitude} IS NOT NULL AND ${regions.longitude} IS NOT NULL AND ${regions.latitude} >= ${minLat} AND ${regions.latitude} <= ${maxLat} AND ${regions.longitude} >= ${minLng} AND ${regions.longitude} <= ${maxLng}`,
@@ -333,39 +338,54 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
       // Add user interaction data if userId is provided
       const regionsWithStats: RegionWithStats[] = [];
 
+      // Optimize N+1 query problem by batch-fetching user interactions
+      const favoriteMap = new Map<string, boolean>();
+      const pinMap = new Map<
+        string,
+        { isPinned: boolean; displayOrder?: number }
+      >();
+
+      if (userId && items.length > 0) {
+        const regionIds = items.map((item) => item.id);
+
+        // Batch fetch favorites and pins
+        const [favoriteResults, pinResults] = await Promise.all([
+          this.db
+            .select()
+            .from(regionFavorites)
+            .where(
+              and(
+                eq(regionFavorites.userId, userId),
+                inArray(regionFavorites.regionId, regionIds),
+              ),
+            ),
+          this.db
+            .select()
+            .from(regionPins)
+            .where(
+              and(
+                eq(regionPins.userId, userId),
+                inArray(regionPins.regionId, regionIds),
+              ),
+            ),
+        ]);
+
+        // Create lookup maps
+        favoriteResults.forEach((fav) => {
+          favoriteMap.set(fav.regionId, true);
+        });
+
+        pinResults.forEach((pin) => {
+          pinMap.set(pin.regionId, {
+            isPinned: true,
+            displayOrder: pin.displayOrder,
+          });
+        });
+      }
+
       for (const item of items) {
-        let isFavorited = false;
-        let isPinned = false;
-        let pinDisplayOrder: number | undefined;
-
-        if (userId) {
-          const [favoriteResult, pinResult] = await Promise.all([
-            this.db
-              .select()
-              .from(regionFavorites)
-              .where(
-                and(
-                  eq(regionFavorites.userId, userId),
-                  eq(regionFavorites.regionId, item.id),
-                ),
-              )
-              .limit(1),
-            this.db
-              .select()
-              .from(regionPins)
-              .where(
-                and(
-                  eq(regionPins.userId, userId),
-                  eq(regionPins.regionId, item.id),
-                ),
-              )
-              .limit(1),
-          ]);
-
-          isFavorited = favoriteResult.length > 0;
-          isPinned = pinResult.length > 0;
-          pinDisplayOrder = pinResult[0]?.displayOrder;
-        }
+        const isFavorited = favoriteMap.get(item.id) || false;
+        const pinInfo = pinMap.get(item.id) || { isPinned: false };
 
         const regionWithStats = {
           ...item,
@@ -374,8 +394,8 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
               ? { latitude: item.latitude, longitude: item.longitude }
               : undefined,
           isFavorited,
-          isPinned,
-          pinDisplayOrder,
+          isPinned: pinInfo.isPinned,
+          pinDisplayOrder: pinInfo.displayOrder,
         };
 
         const validated = validate(regionWithStatsSchema, regionWithStats);
@@ -384,8 +404,18 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
         }
       }
 
+      // Apply accurate distance filtering if location filter was used
+      let finalItems = regionsWithStats;
+      if (locationFilter) {
+        finalItems = filterByDistance(
+          regionsWithStats,
+          locationFilter.coordinates,
+          locationFilter.radiusKm,
+        );
+      }
+
       return ok({
-        items: regionsWithStats,
+        items: finalItems,
         count: Number(countResult[0]?.count || 0),
       });
     } catch (error) {
@@ -413,16 +443,21 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
       ];
 
       // Add location filter if provided
+      let searchLocationFilter:
+        | {
+            coordinates: { latitude: number; longitude: number };
+            radiusKm: number;
+          }
+        | undefined;
       if (location) {
         const { coordinates, radiusKm } = location;
-        const latDelta = radiusKm / 111;
-        const lngDelta =
-          radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
+        searchLocationFilter = { coordinates, radiusKm };
 
-        const minLat = coordinates.latitude - latDelta;
-        const maxLat = coordinates.latitude + latDelta;
-        const minLng = coordinates.longitude - lngDelta;
-        const maxLng = coordinates.longitude + lngDelta;
+        // Use accurate bounding box as preliminary filter for performance
+        const { minLat, maxLat, minLng, maxLng } = createBoundingBox(
+          coordinates,
+          radiusKm,
+        );
 
         filters.push(
           sql`${regions.latitude} IS NOT NULL AND ${regions.longitude} IS NOT NULL AND ${regions.latitude} >= ${minLat} AND ${regions.latitude} <= ${maxLat} AND ${regions.longitude} >= ${minLng} AND ${regions.longitude} <= ${maxLng}`,
@@ -445,39 +480,54 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
       // Process items similar to list method
       const regionsWithStats: RegionWithStats[] = [];
 
+      // Optimize N+1 query problem by batch-fetching user interactions
+      const favoriteMap = new Map<string, boolean>();
+      const pinMap = new Map<
+        string,
+        { isPinned: boolean; displayOrder?: number }
+      >();
+
+      if (userId && items.length > 0) {
+        const regionIds = items.map((item) => item.id);
+
+        // Batch fetch favorites and pins
+        const [favoriteResults, pinResults] = await Promise.all([
+          this.db
+            .select()
+            .from(regionFavorites)
+            .where(
+              and(
+                eq(regionFavorites.userId, userId),
+                inArray(regionFavorites.regionId, regionIds),
+              ),
+            ),
+          this.db
+            .select()
+            .from(regionPins)
+            .where(
+              and(
+                eq(regionPins.userId, userId),
+                inArray(regionPins.regionId, regionIds),
+              ),
+            ),
+        ]);
+
+        // Create lookup maps
+        favoriteResults.forEach((fav) => {
+          favoriteMap.set(fav.regionId, true);
+        });
+
+        pinResults.forEach((pin) => {
+          pinMap.set(pin.regionId, {
+            isPinned: true,
+            displayOrder: pin.displayOrder,
+          });
+        });
+      }
+
       for (const item of items) {
-        let isFavorited = false;
-        let isPinned = false;
-        let pinDisplayOrder: number | undefined;
-
-        if (userId) {
-          const [favoriteResult, pinResult] = await Promise.all([
-            this.db
-              .select()
-              .from(regionFavorites)
-              .where(
-                and(
-                  eq(regionFavorites.userId, userId),
-                  eq(regionFavorites.regionId, item.id),
-                ),
-              )
-              .limit(1),
-            this.db
-              .select()
-              .from(regionPins)
-              .where(
-                and(
-                  eq(regionPins.userId, userId),
-                  eq(regionPins.regionId, item.id),
-                ),
-              )
-              .limit(1),
-          ]);
-
-          isFavorited = favoriteResult.length > 0;
-          isPinned = pinResult.length > 0;
-          pinDisplayOrder = pinResult[0]?.displayOrder;
-        }
+        const isFavorited = favoriteMap.get(item.id) || false;
+        const pinInfo = pinMap.get(item.id) || { isPinned: false };
 
         const regionWithStats = {
           ...item,
@@ -486,8 +536,8 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
               ? { latitude: item.latitude, longitude: item.longitude }
               : undefined,
           isFavorited,
-          isPinned,
-          pinDisplayOrder,
+          isPinned: pinInfo.isPinned,
+          pinDisplayOrder: pinInfo.displayOrder,
         };
 
         const validated = validate(regionWithStatsSchema, regionWithStats);
@@ -496,8 +546,18 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
         }
       }
 
+      // Apply accurate distance filtering if location filter was used
+      let finalItems = regionsWithStats;
+      if (searchLocationFilter) {
+        finalItems = filterByDistance(
+          regionsWithStats,
+          searchLocationFilter.coordinates,
+          searchLocationFilter.radiusKm,
+        );
+      }
+
       return ok({
-        items: regionsWithStats,
+        items: finalItems,
         count: Number(countResult[0]?.count || 0),
       });
     } catch (error) {
@@ -519,39 +579,54 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
 
       const regionsWithStats: RegionWithStats[] = [];
 
+      // Optimize N+1 query problem by batch-fetching user interactions
+      const favoriteMap = new Map<string, boolean>();
+      const pinMap = new Map<
+        string,
+        { isPinned: boolean; displayOrder?: number }
+      >();
+
+      if (userId && items.length > 0) {
+        const regionIds = items.map((item) => item.id);
+
+        // Batch fetch favorites and pins
+        const [favoriteResults, pinResults] = await Promise.all([
+          this.db
+            .select()
+            .from(regionFavorites)
+            .where(
+              and(
+                eq(regionFavorites.userId, userId),
+                inArray(regionFavorites.regionId, regionIds),
+              ),
+            ),
+          this.db
+            .select()
+            .from(regionPins)
+            .where(
+              and(
+                eq(regionPins.userId, userId),
+                inArray(regionPins.regionId, regionIds),
+              ),
+            ),
+        ]);
+
+        // Create lookup maps
+        favoriteResults.forEach((fav) => {
+          favoriteMap.set(fav.regionId, true);
+        });
+
+        pinResults.forEach((pin) => {
+          pinMap.set(pin.regionId, {
+            isPinned: true,
+            displayOrder: pin.displayOrder,
+          });
+        });
+      }
+
       for (const item of items) {
-        let isFavorited = false;
-        let isPinned = false;
-        let pinDisplayOrder: number | undefined;
-
-        if (userId) {
-          const [favoriteResult, pinResult] = await Promise.all([
-            this.db
-              .select()
-              .from(regionFavorites)
-              .where(
-                and(
-                  eq(regionFavorites.userId, userId),
-                  eq(regionFavorites.regionId, item.id),
-                ),
-              )
-              .limit(1),
-            this.db
-              .select()
-              .from(regionPins)
-              .where(
-                and(
-                  eq(regionPins.userId, userId),
-                  eq(regionPins.regionId, item.id),
-                ),
-              )
-              .limit(1),
-          ]);
-
-          isFavorited = favoriteResult.length > 0;
-          isPinned = pinResult.length > 0;
-          pinDisplayOrder = pinResult[0]?.displayOrder;
-        }
+        const isFavorited = favoriteMap.get(item.id) || false;
+        const pinInfo = pinMap.get(item.id) || { isPinned: false };
 
         const regionWithStats = {
           ...item,
@@ -560,8 +635,8 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
               ? { latitude: item.latitude, longitude: item.longitude }
               : undefined,
           isFavorited,
-          isPinned,
-          pinDisplayOrder,
+          isPinned: pinInfo.isPinned,
+          pinDisplayOrder: pinInfo.displayOrder,
         };
 
         const validated = validate(regionWithStatsSchema, regionWithStats);
