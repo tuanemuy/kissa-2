@@ -11,10 +11,15 @@ import {
   withTransaction,
 } from "@/core/adapters/drizzlePglite/client";
 import {
+  DrizzlePglitePlaceFavoriteRepository,
   DrizzlePglitePlacePermissionRepository,
   DrizzlePglitePlaceRepository,
 } from "@/core/adapters/drizzlePglite/placeRepository";
-import { DrizzlePgliteRegionRepository } from "@/core/adapters/drizzlePglite/regionRepository";
+import {
+  DrizzlePgliteRegionFavoriteRepository,
+  DrizzlePgliteRegionPinRepository,
+  DrizzlePgliteRegionRepository,
+} from "@/core/adapters/drizzlePglite/regionRepository";
 import { DrizzlePgliteReportRepository } from "@/core/adapters/drizzlePglite/reportRepository";
 import {
   DrizzlePgliteEmailVerificationTokenRepository,
@@ -25,12 +30,21 @@ import {
   DrizzlePgliteUserSubscriptionRepository,
 } from "@/core/adapters/drizzlePglite/userRepository";
 import { ConsoleEmailService } from "@/core/adapters/email/consoleEmailService";
+import { SMTPEmailService } from "@/core/adapters/email/smtpEmailService";
 import { HaversineLocationService } from "@/core/adapters/location/haversineLocationService";
 import type { Context } from "@/core/application/context";
 
 export const envSchema = z.object({
   NEXT_PUBLIC_URL: z.string().url(),
   DATABASE_DIRECTORY: z.string().min(1),
+  // SMTP configuration (optional - falls back to console if not provided)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_SECURE: z.coerce.boolean().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM_EMAIL: z.string().email().optional(),
+  SMTP_FROM_NAME: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -58,7 +72,10 @@ const emailVerificationTokenRepository =
 const passwordResetTokenRepository =
   new DrizzlePglitePasswordResetTokenRepository(db);
 const regionRepository = new DrizzlePgliteRegionRepository(db);
+const regionFavoriteRepository = new DrizzlePgliteRegionFavoriteRepository(db);
+const regionPinRepository = new DrizzlePgliteRegionPinRepository(db);
 const placeRepository = new DrizzlePglitePlaceRepository(db);
+const placeFavoriteRepository = new DrizzlePglitePlaceFavoriteRepository(db);
 const placePermissionRepository = new DrizzlePglitePlacePermissionRepository(
   db,
 );
@@ -67,11 +84,37 @@ const checkinPhotoRepository = new DrizzlePgliteCheckinPhotoRepository(db);
 const reportRepository = new DrizzlePgliteReportRepository(db);
 
 // Create services
-const emailService = new ConsoleEmailService({
-  fromEmail: "noreply@example.com",
-  fromName: "Kissa App",
-  baseUrl: env.data.NEXT_PUBLIC_URL,
-});
+const emailService = (() => {
+  // Use SMTP service if all required SMTP config is provided
+  if (
+    env.data.SMTP_HOST &&
+    env.data.SMTP_PORT &&
+    env.data.SMTP_USER &&
+    env.data.SMTP_PASS &&
+    env.data.SMTP_FROM_EMAIL &&
+    env.data.SMTP_FROM_NAME
+  ) {
+    return new SMTPEmailService({
+      host: env.data.SMTP_HOST,
+      port: env.data.SMTP_PORT,
+      secure: env.data.SMTP_SECURE ?? false,
+      auth: {
+        user: env.data.SMTP_USER,
+        pass: env.data.SMTP_PASS,
+      },
+      fromEmail: env.data.SMTP_FROM_EMAIL,
+      fromName: env.data.SMTP_FROM_NAME,
+      baseUrl: env.data.NEXT_PUBLIC_URL,
+    });
+  }
+
+  // Fallback to console service for development
+  return new ConsoleEmailService({
+    fromEmail: "noreply@example.com",
+    fromName: "Kissa App",
+    baseUrl: env.data.NEXT_PUBLIC_URL,
+  });
+})();
 const passwordHasher = new BcryptPasswordHasher();
 const tokenGenerator = new CryptoTokenGenerator();
 const locationService = new HaversineLocationService();
@@ -93,9 +136,12 @@ export const context: Context = {
 
   // Region repositories
   regionRepository,
+  regionFavoriteRepository,
+  regionPinRepository,
 
   // Place repositories
   placeRepository,
+  placeFavoriteRepository,
   placePermissionRepository,
 
   // Checkin repositories and services

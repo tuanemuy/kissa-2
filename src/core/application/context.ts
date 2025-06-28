@@ -6,10 +6,15 @@ import type {
 } from "@/core/domain/checkin/ports/checkinRepository";
 import type { LocationService } from "@/core/domain/checkin/ports/locationService";
 import type {
+  PlaceFavoriteRepository,
   PlacePermissionRepository,
   PlaceRepository,
 } from "@/core/domain/place/ports/placeRepository";
-import type { RegionRepository } from "@/core/domain/region/ports/regionRepository";
+import type {
+  RegionFavoriteRepository,
+  RegionPinRepository,
+  RegionRepository,
+} from "@/core/domain/region/ports/regionRepository";
 import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
 import type {
   PasswordHasher,
@@ -42,9 +47,12 @@ export interface Context {
 
   // Region repositories
   regionRepository: RegionRepository;
+  regionFavoriteRepository: RegionFavoriteRepository;
+  regionPinRepository: RegionPinRepository;
 
   // Place repositories
   placeRepository: PlaceRepository;
+  placeFavoriteRepository: PlaceFavoriteRepository;
   placePermissionRepository: PlacePermissionRepository;
 
   // Checkin repositories and services

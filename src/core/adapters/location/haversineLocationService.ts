@@ -91,16 +91,37 @@ export class HaversineLocationService implements LocationService {
 
   /**
    * Gets address from coordinates (reverse geocoding)
-   * Note: This is a placeholder implementation. In production, you would
-   * integrate with a geocoding service like Google Maps, OpenStreetMap, etc.
+   * Uses OpenStreetMap Nominatim API for reverse geocoding
    */
   async getAddressFromCoordinates(
     coordinates: Coordinates,
   ): Promise<Result<string, LocationServiceError>> {
     try {
-      // Placeholder implementation - in production, integrate with geocoding service
-      const address = `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
-      return ok(address);
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.latitude}&lon=${coordinates.longitude}&addressdetails=1`;
+
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Kissa-App/1.0 (https://kissa.example.com)",
+        },
+      });
+
+      if (!response.ok) {
+        return err(
+          new LocationServiceError(
+            `Geocoding service returned ${response.status}: ${response.statusText}`,
+          ),
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data.display_name) {
+        // Fallback to coordinates if no address found
+        const address = `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
+        return ok(address);
+      }
+
+      return ok(data.display_name);
     } catch (error) {
       return err(
         new LocationServiceError(
@@ -113,21 +134,52 @@ export class HaversineLocationService implements LocationService {
 
   /**
    * Gets coordinates from address (forward geocoding)
-   * Note: This is a placeholder implementation. In production, you would
-   * integrate with a geocoding service like Google Maps, OpenStreetMap, etc.
+   * Uses OpenStreetMap Nominatim API for forward geocoding
    */
   async getCoordinatesFromAddress(
     address: string,
   ): Promise<Result<Coordinates | null, LocationServiceError>> {
     try {
-      // Placeholder implementation - in production, integrate with geocoding service
-      // This would parse address and return coordinates if found
       if (!address.trim()) {
         return ok(null);
       }
 
-      // Return null for placeholder - in production this would call external service
-      return ok(null);
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`;
+
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Kissa-App/1.0 (https://kissa.example.com)",
+        },
+      });
+
+      if (!response.ok) {
+        return err(
+          new LocationServiceError(
+            `Geocoding service returned ${response.status}: ${response.statusText}`,
+          ),
+        );
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        // No results found
+        return ok(null);
+      }
+
+      const result = data[0];
+      const latitude = Number.parseFloat(result.lat);
+      const longitude = Number.parseFloat(result.lon);
+
+      if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        return err(
+          new LocationServiceError(
+            "Invalid coordinates received from geocoding service",
+          ),
+        );
+      }
+
+      return ok({ latitude, longitude });
     } catch (error) {
       return err(
         new LocationServiceError(

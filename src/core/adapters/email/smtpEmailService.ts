@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "neverthrow";
+import nodemailer from "nodemailer";
 import {
   type EmailService,
   EmailServiceError,
@@ -132,8 +133,15 @@ export class SMTPEmailService implements EmailService {
     text: string,
   ): Promise<Result<void, EmailServiceError>> {
     try {
-      // In a real implementation, you would use nodemailer or similar
-      // This is a placeholder that would be replaced with actual SMTP sending logic
+      const transporter = nodemailer.createTransport({
+        host: this.config.host,
+        port: this.config.port,
+        secure: this.config.secure,
+        auth: {
+          user: this.config.auth.user,
+          pass: this.config.auth.pass,
+        },
+      });
 
       const emailData = {
         from: `${this.config.fromName} <${this.config.fromEmail}>`,
@@ -143,11 +151,7 @@ export class SMTPEmailService implements EmailService {
         text,
       };
 
-      // Placeholder for actual email sending
-      // const transporter = nodemailer.createTransporter(this.config);
-      // await transporter.sendMail(emailData);
-
-      console.log("📧 Would send email:", emailData);
+      await transporter.sendMail(emailData);
 
       return ok(undefined);
     } catch (error) {
