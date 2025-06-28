@@ -4,11 +4,11 @@
 
 - `docs/requirements.md` に要件を定義した
 - `docs/frontend.md` にフロントエンドの実装例を記載した
-- `docs/usecases.tsv` に想定されるページ構成とユースケースを定義した
+- `docs/pages.md` にページ構成を記載した
 
 ## タスク
 
-- 設計と実装を比較して、`docs/progress_frontend.md` を更新する
+- 設計と実装を比較して、`logs/${yyyyMMddHHmm}_progress_frontend.md` を更新する
 
 ## 備考
 

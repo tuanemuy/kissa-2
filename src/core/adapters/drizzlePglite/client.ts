@@ -1,14 +1,13 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema";
 
 export type Database = ReturnType<typeof drizzle<typeof schema>>;
 
-export function getDatabase(filePath: string) {
+export function getDatabase(directory: string) {
+  const client = new PGlite(directory);
   return drizzle({
-    client: createClient({
-      url: `file:${filePath}`,
-    }),
+    client,
     schema,
   });
 }
