@@ -1,5 +1,7 @@
-import { err, type Result } from "neverthrow";
+import type { Result } from "neverthrow";
 import { z } from "zod/v4";
+import { BcryptPasswordHasher } from "@/core/adapters/auth/bcryptPasswordHasher";
+import { CryptoTokenGenerator } from "@/core/adapters/auth/cryptoTokenGenerator";
 import {
   DrizzlePgliteCheckinPhotoRepository,
   DrizzlePgliteCheckinRepository,
@@ -13,23 +15,18 @@ import {
   DrizzlePglitePlaceRepository,
 } from "@/core/adapters/drizzlePglite/placeRepository";
 import { DrizzlePgliteRegionRepository } from "@/core/adapters/drizzlePglite/regionRepository";
+import { DrizzlePgliteReportRepository } from "@/core/adapters/drizzlePglite/reportRepository";
 import {
+  DrizzlePgliteEmailVerificationTokenRepository,
+  DrizzlePgliteNotificationSettingsRepository,
+  DrizzlePglitePasswordResetTokenRepository,
   DrizzlePgliteUserRepository,
+  DrizzlePgliteUserSessionRepository,
   DrizzlePgliteUserSubscriptionRepository,
 } from "@/core/adapters/drizzlePglite/userRepository";
 import { ConsoleEmailService } from "@/core/adapters/email/consoleEmailService";
+import { HaversineLocationService } from "@/core/adapters/location/haversineLocationService";
 import type { Context } from "@/core/application/context";
-import type { LocationService } from "@/core/domain/checkin/ports/locationService";
-import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
-import type {
-  PasswordHasher,
-  TokenGenerator,
-} from "@/core/domain/user/ports/authService";
-import type {
-  EmailVerificationTokenRepository,
-  NotificationSettingsRepository,
-  UserSessionRepository,
-} from "@/core/domain/user/ports/userRepository";
 
 export const envSchema = z.object({
   NEXT_PUBLIC_URL: z.string().url(),
@@ -53,6 +50,13 @@ const userRepository = new DrizzlePgliteUserRepository(db);
 const userSubscriptionRepository = new DrizzlePgliteUserSubscriptionRepository(
   db,
 );
+const notificationSettingsRepository =
+  new DrizzlePgliteNotificationSettingsRepository(db);
+const userSessionRepository = new DrizzlePgliteUserSessionRepository(db);
+const emailVerificationTokenRepository =
+  new DrizzlePgliteEmailVerificationTokenRepository(db);
+const passwordResetTokenRepository =
+  new DrizzlePglitePasswordResetTokenRepository(db);
 const regionRepository = new DrizzlePgliteRegionRepository(db);
 const placeRepository = new DrizzlePglitePlaceRepository(db);
 const placePermissionRepository = new DrizzlePglitePlacePermissionRepository(
@@ -60,28 +64,17 @@ const placePermissionRepository = new DrizzlePglitePlacePermissionRepository(
 );
 const checkinRepository = new DrizzlePgliteCheckinRepository(db);
 const checkinPhotoRepository = new DrizzlePgliteCheckinPhotoRepository(db);
+const reportRepository = new DrizzlePgliteReportRepository(db);
 
-// Create email service
+// Create services
 const emailService = new ConsoleEmailService({
   fromEmail: "noreply@example.com",
   fromName: "Kissa App",
   baseUrl: env.data.NEXT_PUBLIC_URL,
 });
-
-// Stub implementations for missing services - using Proxy for dynamic method handling
-const createRepositoryStub = () => {
-  return new Proxy(
-    {},
-    {
-      get(_target, prop) {
-        if (typeof prop === "string") {
-          return async () => err(new Error(`Method ${prop} not implemented`));
-        }
-        return undefined;
-      },
-    },
-  );
-};
+const passwordHasher = new BcryptPasswordHasher();
+const tokenGenerator = new CryptoTokenGenerator();
+const locationService = new HaversineLocationService();
 
 export const context: Context = {
   // Environment configuration
@@ -89,14 +82,13 @@ export const context: Context = {
 
   // User repositories and services
   userRepository,
-  userSessionRepository: createRepositoryStub() as UserSessionRepository,
+  userSessionRepository,
   userSubscriptionRepository,
-  notificationSettingsRepository:
-    createRepositoryStub() as NotificationSettingsRepository,
-  emailVerificationTokenRepository:
-    createRepositoryStub() as EmailVerificationTokenRepository,
-  passwordHasher: createRepositoryStub() as PasswordHasher,
-  tokenGenerator: createRepositoryStub() as TokenGenerator,
+  notificationSettingsRepository,
+  emailVerificationTokenRepository,
+  passwordResetTokenRepository,
+  passwordHasher,
+  tokenGenerator,
   emailService,
 
   // Region repositories
@@ -109,10 +101,10 @@ export const context: Context = {
   // Checkin repositories and services
   checkinRepository,
   checkinPhotoRepository,
-  locationService: createRepositoryStub() as LocationService,
+  locationService,
 
   // Report repository
-  reportRepository: createRepositoryStub() as ReportRepository,
+  reportRepository,
 
   // Database transaction support
   database: db,

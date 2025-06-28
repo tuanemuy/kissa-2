@@ -19,6 +19,7 @@ import type { EmailService } from "@/core/domain/user/ports/emailService";
 import type {
   EmailVerificationTokenRepository,
   NotificationSettingsRepository,
+  PasswordResetTokenRepository,
   UserRepository,
   UserSessionRepository,
   UserSubscriptionRepository,
@@ -34,6 +35,7 @@ export interface Context {
   userSubscriptionRepository: UserSubscriptionRepository;
   notificationSettingsRepository: NotificationSettingsRepository;
   emailVerificationTokenRepository: EmailVerificationTokenRepository;
+  passwordResetTokenRepository: PasswordResetTokenRepository;
   passwordHasher: PasswordHasher;
   tokenGenerator: TokenGenerator;
   emailService: EmailService;

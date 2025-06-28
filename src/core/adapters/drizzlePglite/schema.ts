@@ -73,6 +73,26 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
   "saturday",
   "sunday",
 ]);
+export const reportStatusEnum = pgEnum("report_status", [
+  "pending",
+  "under_review",
+  "resolved",
+  "dismissed",
+]);
+export const reportTypeEnum = pgEnum("report_type", [
+  "spam",
+  "inappropriate_content",
+  "harassment",
+  "false_information",
+  "copyright_violation",
+  "other",
+]);
+export const reportEntityTypeEnum = pgEnum("report_entity_type", [
+  "user",
+  "place",
+  "region",
+  "checkin",
+]);
 
 // Users Table
 export const users = pgTable(
@@ -505,6 +525,40 @@ export const checkinPhotos = pgTable(
   }),
 );
 
+// Reports Table
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .$defaultFn(() => uuidv7()),
+    reporterUserId: uuid("reporter_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    entityType: reportEntityTypeEnum("entity_type").notNull(),
+    entityId: uuid("entity_id").notNull(),
+    type: reportTypeEnum("type").notNull(),
+    reason: text("reason").notNull(),
+    status: reportStatusEnum("status").notNull().default("pending"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at"),
+    reviewNotes: text("review_notes"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    reporterIdx: index("reports_reporter_idx").on(table.reporterUserId),
+    entityIdx: index("reports_entity_idx").on(table.entityType, table.entityId),
+    statusIdx: index("reports_status_idx").on(table.status),
+    typeIdx: index("reports_type_idx").on(table.type),
+    createdAtIdx: index("reports_created_at_idx").on(table.createdAt),
+    reviewedByIdx: index("reports_reviewed_by_idx").on(table.reviewedBy),
+  }),
+);
+
 // Relations
 export const userRelations = relations(users, ({ one, many }) => ({
   subscription: one(userSubscriptions, {
@@ -526,6 +580,8 @@ export const userRelations = relations(users, ({ one, many }) => ({
   placePermissions: many(placePermissions),
   placeInvitations: many(placePermissions, { relationName: "placeInviter" }),
   checkins: many(checkins),
+  reports: many(reports),
+  reviewedReports: many(reports, { relationName: "reportReviewer" }),
 }));
 
 export const regionRelations = relations(regions, ({ one, many }) => ({
@@ -563,4 +619,16 @@ export const checkinRelations = relations(checkins, ({ one, many }) => ({
     references: [places.id],
   }),
   photos: many(checkinPhotos),
+}));
+
+export const reportRelations = relations(reports, ({ one }) => ({
+  reporter: one(users, {
+    fields: [reports.reporterUserId],
+    references: [users.id],
+  }),
+  reviewer: one(users, {
+    fields: [reports.reviewedBy],
+    references: [users.id],
+    relationName: "reportReviewer",
+  }),
 }));
