@@ -1,4 +1,5 @@
-import { and, asc, count, desc, eq, exists, gte, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, sql } from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { err, ok, type Result } from "neverthrow";
 import {
   type CheckinPhotoRepository,
@@ -294,10 +295,7 @@ export class DrizzlePgliteCheckinRepository implements CheckinRepository {
       // Add date range filter
       if (filter?.dateRange) {
         filters.push(
-          and(
-            gte(checkins.createdAt, filter.dateRange.from),
-            lte(checkins.createdAt, filter.dateRange.to),
-          ),
+          sql`${checkins.createdAt} >= ${filter.dateRange.from} AND ${checkins.createdAt} <= ${filter.dateRange.to}`,
         );
       }
 
@@ -306,7 +304,7 @@ export class DrizzlePgliteCheckinRepository implements CheckinRepository {
       const sortDirection = sort?.direction || "desc";
       const orderBy = sortDirection === "asc" ? asc : desc;
 
-      let sortColumn: any;
+      let sortColumn: PgColumn;
       switch (sortField) {
         case "rating":
           sortColumn = checkins.rating;
@@ -317,6 +315,8 @@ export class DrizzlePgliteCheckinRepository implements CheckinRepository {
         default:
           sortColumn = checkins.createdAt;
       }
+
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
 
       const [items, countResult] = await Promise.all([
         this.db
@@ -334,14 +334,14 @@ export class DrizzlePgliteCheckinRepository implements CheckinRepository {
           .innerJoin(users, eq(checkins.userId, users.id))
           .innerJoin(places, eq(checkins.placeId, places.id))
           .innerJoin(regions, eq(places.regionId, regions.id))
-          .where(and(...filters))
+          .where(whereCondition)
           .limit(limit)
           .offset(offset)
           .orderBy(orderBy(sortColumn)),
         this.db
           .select({ count: count() })
           .from(checkins)
-          .where(and(...filters)),
+          .where(whereCondition),
       ]);
 
       const checkinsWithDetails: CheckinWithDetails[] = [];
@@ -607,10 +607,7 @@ export class DrizzlePgliteCheckinRepository implements CheckinRepository {
           .select({ count: count() })
           .from(checkins)
           .where(
-            and(
-              eq(checkins.userId, userId),
-              gte(checkins.createdAt, startOfMonth),
-            ),
+            sql`${checkins.userId} = ${userId} AND ${checkins.createdAt} >= ${startOfMonth}`,
           ),
 
         // Unique places

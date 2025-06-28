@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { err, ok, type Result } from "neverthrow";
 import {
   type PlaceFavoriteRepository,
@@ -333,13 +334,13 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
         const lngDelta =
           radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
 
+        const minLat = coordinates.latitude - latDelta;
+        const maxLat = coordinates.latitude + latDelta;
+        const minLng = coordinates.longitude - lngDelta;
+        const maxLng = coordinates.longitude + lngDelta;
+
         filters.push(
-          and(
-            sql`${places.latitude} >= ${coordinates.latitude - latDelta}`,
-            sql`${places.latitude} <= ${coordinates.latitude + latDelta}`,
-            sql`${places.longitude} >= ${coordinates.longitude - lngDelta}`,
-            sql`${places.longitude} <= ${coordinates.longitude + lngDelta}`,
-          ),
+          sql`${places.latitude} >= ${minLat} AND ${places.latitude} <= ${maxLat} AND ${places.longitude} >= ${minLng} AND ${places.longitude} <= ${maxLng}`,
         );
       }
 
@@ -348,7 +349,7 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
       const sortDirection = sort?.direction || "desc";
       const orderBy = sortDirection === "asc" ? asc : desc;
 
-      let sortColumn: any;
+      let sortColumn: PgColumn;
       switch (sortField) {
         case "name":
           sortColumn = places.name;
@@ -369,6 +370,8 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
           sortColumn = places.createdAt;
       }
 
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
+
       const [items, countResult] = await Promise.all([
         this.db
           .select({
@@ -377,14 +380,14 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
           })
           .from(places)
           .leftJoin(regions, eq(places.regionId, regions.id))
-          .where(and(...filters))
+          .where(whereCondition)
           .limit(limit)
           .offset(offset)
           .orderBy(orderBy(sortColumn)),
         this.db
           .select({ count: count() })
           .from(places)
-          .where(and(...filters)),
+          .where(whereCondition),
       ]);
 
       const placesWithStats: PlaceWithStats[] = [];
@@ -504,6 +507,8 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
         );
       }
 
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
+
       const [items, countResult] = await Promise.all([
         this.db
           .select({
@@ -512,14 +517,14 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
           })
           .from(places)
           .leftJoin(regions, eq(places.regionId, regions.id))
-          .where(and(...filters))
+          .where(whereCondition)
           .limit(limit)
           .offset(offset)
           .orderBy(desc(places.visitCount), desc(places.favoriteCount)),
         this.db
           .select({ count: count() })
           .from(places)
-          .where(and(...filters)),
+          .where(whereCondition),
       ]);
 
       const placesWithStats: PlaceWithStats[] = [];
@@ -696,10 +701,12 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
         filters.push(eq(places.status, status));
       }
 
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
+
       const items = await this.db
         .select()
         .from(places)
-        .where(and(...filters))
+        .where(whereCondition)
         .orderBy(desc(places.createdAt));
 
       const validatedPlaces: Place[] = [];

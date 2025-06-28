@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like } from "drizzle-orm";
+import { and, count, desc, eq, like, sql } from "drizzle-orm";
 import { err, ok, type Result } from "neverthrow";
 import {
   type UserRepository,
@@ -298,18 +298,20 @@ export class DrizzlePgliteUserRepository implements UserRepository {
         filter?.keyword ? like(users.name, `%${filter.keyword}%`) : undefined,
       ].filter((filter) => filter !== undefined);
 
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
+
       const [items, countResult] = await Promise.all([
         this.db
           .select()
           .from(users)
-          .where(and(...filters))
+          .where(whereCondition)
           .limit(limit)
           .offset(offset)
           .orderBy(desc(users.createdAt)),
         this.db
           .select({ count: count() })
           .from(users)
-          .where(and(...filters)),
+          .where(whereCondition),
       ]);
 
       const validatedItems = items

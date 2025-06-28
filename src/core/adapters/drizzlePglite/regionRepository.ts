@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { err, ok, type Result } from "neverthrow";
 import {
   type RegionFavoriteRepository,
@@ -283,13 +284,13 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
         const lngDelta =
           radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
 
+        const minLat = coordinates.latitude - latDelta;
+        const maxLat = coordinates.latitude + latDelta;
+        const minLng = coordinates.longitude - lngDelta;
+        const maxLng = coordinates.longitude + lngDelta;
+
         filters.push(
-          and(
-            sql`${regions.latitude} >= ${coordinates.latitude - latDelta}`,
-            sql`${regions.latitude} <= ${coordinates.latitude + latDelta}`,
-            sql`${regions.longitude} >= ${coordinates.longitude - lngDelta}`,
-            sql`${regions.longitude} <= ${coordinates.longitude + lngDelta}`,
-          ),
+          sql`${regions.latitude} IS NOT NULL AND ${regions.longitude} IS NOT NULL AND ${regions.latitude} >= ${minLat} AND ${regions.latitude} <= ${maxLat} AND ${regions.longitude} >= ${minLng} AND ${regions.longitude} <= ${maxLng}`,
         );
       }
 
@@ -298,7 +299,7 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
       const sortDirection = sort?.direction || "desc";
       const orderBy = sortDirection === "asc" ? asc : desc;
 
-      let sortColumn: any;
+      let sortColumn: PgColumn;
       switch (sortField) {
         case "name":
           sortColumn = regions.name;
@@ -316,18 +317,20 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
           sortColumn = regions.createdAt;
       }
 
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
+
       const [items, countResult] = await Promise.all([
         this.db
           .select()
           .from(regions)
-          .where(and(...filters))
+          .where(whereCondition)
           .limit(limit)
           .offset(offset)
           .orderBy(orderBy(sortColumn)),
         this.db
           .select({ count: count() })
           .from(regions)
-          .where(and(...filters)),
+          .where(whereCondition),
       ]);
 
       // Add user interaction data if userId is provided
@@ -419,28 +422,30 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
         const lngDelta =
           radiusKm / (111 * Math.cos((coordinates.latitude * Math.PI) / 180));
 
+        const minLat = coordinates.latitude - latDelta;
+        const maxLat = coordinates.latitude + latDelta;
+        const minLng = coordinates.longitude - lngDelta;
+        const maxLng = coordinates.longitude + lngDelta;
+
         filters.push(
-          and(
-            sql`${regions.latitude} >= ${coordinates.latitude - latDelta}`,
-            sql`${regions.latitude} <= ${coordinates.latitude + latDelta}`,
-            sql`${regions.longitude} >= ${coordinates.longitude - lngDelta}`,
-            sql`${regions.longitude} <= ${coordinates.longitude + lngDelta}`,
-          ),
+          sql`${regions.latitude} IS NOT NULL AND ${regions.longitude} IS NOT NULL AND ${regions.latitude} >= ${minLat} AND ${regions.latitude} <= ${maxLat} AND ${regions.longitude} >= ${minLng} AND ${regions.longitude} <= ${maxLng}`,
         );
       }
+
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
 
       const [items, countResult] = await Promise.all([
         this.db
           .select()
           .from(regions)
-          .where(and(...filters))
+          .where(whereCondition)
           .limit(limit)
           .offset(offset)
           .orderBy(desc(regions.visitCount), desc(regions.favoriteCount)),
         this.db
           .select({ count: count() })
           .from(regions)
-          .where(and(...filters)),
+          .where(whereCondition),
       ]);
 
       // Process items similar to list method
@@ -589,10 +594,12 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
         filters.push(eq(regions.status, status));
       }
 
+      const whereCondition = filters.length > 0 ? and(...filters) : sql`1=1`;
+
       const items = await this.db
         .select()
         .from(regions)
-        .where(and(...filters))
+        .where(whereCondition)
         .orderBy(desc(regions.createdAt));
 
       const validatedRegions: Region[] = [];
