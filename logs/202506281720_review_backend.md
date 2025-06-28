@@ -9,6 +9,7 @@
 ヘキサゴナルアーキテクチャとドメイン駆動設計に基づくバックエンド実装のレビューを実施しました。全体的に設計パターンに忠実に実装されており、高品質なコードベースとなっています。
 
 ### 総合評価
+
 - **アーキテクチャ準拠**: ✅ 優秀
 - **コード品質**: ✅ 優秀  
 - **型安全性**: ✅ 優秀
@@ -19,6 +20,7 @@
 ### 1. ドメイン層レビュー (src/core/domain/)
 
 #### 📋 レビュー項目
+
 - 型定義の設計と実装
 - ポートインターフェースの設計
 - ドメインエンティティとバリューオブジェクト
@@ -26,18 +28,21 @@
 #### ✅ 優れた点
 
 **型定義 (types.ts)**
+
 - Zod v4を使用したスキーマファーストアプローチ
 - 各ドメインで適切にエンティティを分離 (User, Region, Place, Checkin)
 - バリデーション、作成用、更新用パラメータが適切に定義
 - 統一された命名規則とパターン
 
 **ポートインターフェース**
+
 - 依存関係の逆転が適切に実装されている
 - Resultパターンによる関数型エラーハンドリング
 - インターフェースの分離原則に従った設計
 - ドメイン固有のエラー型が適切に定義
 
 **具体例**: `src/core/domain/user/ports/userRepository.ts:25-65`
+
 ```typescript
 export interface UserRepository {
   create(params: CreateUserParams): Promise<Result<User, UserRepositoryError>>;
@@ -57,6 +62,7 @@ export interface UserRepository {
 ### 2. アダプター層レビュー (src/core/adapters/)
 
 #### 📋 レビュー項目
+
 - Drizzle + PGlite実装の品質
 - データベーススキーマ設計
 - ポートインターフェースの実装
@@ -64,17 +70,20 @@ export interface UserRepository {
 #### ✅ 優れた点
 
 **データベーススキーマ (schema.ts)**
+
 - 適切な制約とインデックス設計
 - リレーションシップの明確な定義
 - Enum型の活用によるデータ整合性確保
 - UUID v7の使用による順序保証
 
 **リポジトリ実装**
+
 - エラーハンドリングが適切に実装
 - Zod検証による型安全性の確保
 - トランザクション処理の考慮
 
 **具体例**: `src/core/adapters/drizzlePglite/userRepository.ts:47-73`
+
 ```typescript
 async create(params: CreateUserParams): Promise<Result<User, UserRepositoryError>> {
   try {
@@ -99,6 +108,7 @@ async create(params: CreateUserParams): Promise<Result<User, UserRepositoryError
 ### 3. アプリケーション層レビュー (src/core/application/)
 
 #### 📋 レビュー項目
+
 - ユースケースの実装品質
 - 依存性注入の実装
 - ビジネスロジックの組み立て
@@ -106,16 +116,19 @@ async create(params: CreateUserParams): Promise<Result<User, UserRepositoryError
 #### ✅ 優れた点
 
 **ユースケース実装**
+
 - Single Responsibility Principleに従った関数設計
 - 適切な認可・認証チェック
 - エラーハンドリングとロールバック処理
 
 **Context設計**
+
 - 依存性注入の適切な実装
 - インターフェースベースの設計
 - 環境設定の分離
 
 **具体例**: `src/core/application/user/registerUser.ts:24-113`
+
 ```typescript
 export async function registerUser(
   context: Context,
@@ -138,11 +151,13 @@ export async function registerUser(
 #### ✅ 優れた点
 
 **型安全性**
+
 - TypeScript strict modeの活用
 - Zod v4によるランタイム型検証
 - Result型による関数型エラーハンドリング
 
 **エラーハンドリング**
+
 - 階層化されたエラー型設計
 - neverthrowによる例外安全性
 - 適切なエラー伝播とロギング
@@ -157,6 +172,7 @@ export async function registerUser(
 #### 📋 実装状況確認
 
 **実装済み機能**
+
 - ✅ ユーザー管理（登録、認証、プロフィール管理）
 - ✅ 地域管理（作成、編集、削除）
 - ✅ 場所管理（作成、編集、権限管理）
@@ -165,6 +181,7 @@ export async function registerUser(
 - ✅ 通知設定管理
 
 **未実装機能**
+
 - ⚠️ サブスクリプション管理の実装が不完全
 - ⚠️ 管理者機能（ユーザー管理、コンテンツ管理）
 - ⚠️ 通報機能
@@ -173,11 +190,13 @@ export async function registerUser(
 ### 6. パフォーマンスと拡張性
 
 #### ✅ 優れた点
+
 - インデックス設計による検索最適化
 - ページネーション機能の実装
 - 座標検索のための空間インデックス
 
 #### 📝 改善提案
+
 1. **キャッシュ戦略の検討**
 2. **読み取り専用レプリカの活用**
 3. **地理空間データの最適化**
@@ -185,6 +204,7 @@ export async function registerUser(
 ## 推奨される次のステップ
 
 ### 短期（1-2週間）
+
 1. **未実装機能の完成**
    - サブスクリプション管理機能
    - 管理者機能の実装
@@ -195,6 +215,7 @@ export async function registerUser(
    - 統合テストの実装
 
 ### 中期（1ヶ月）
+
 1. **本番環境対応**
    - ストレージサービスの具象実装
    - メールサービスの実装
@@ -205,6 +226,7 @@ export async function registerUser(
    - キャッシュ戦略の実装
 
 ### 長期（3ヶ月）
+
 1. **拡張性対応**
    - マイクロサービス化の検討
    - API Gateway導入の検討
@@ -217,3 +239,4 @@ export async function registerUser(
 未実装機能の完成と本番環境への対応を進めることで、堅牢でスケーラブルなシステムとして運用開始できる状態です。
 
 **総合評価: A（優秀）**
+

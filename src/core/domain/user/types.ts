@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { paginationSchema } from "@/lib/pagination";
+import { USER } from "../constants";
 
 export const userRoleSchema = z.enum(["visitor", "editor", "admin"]);
 export type UserRole = z.infer<typeof userRoleSchema>;
@@ -23,8 +24,8 @@ export const userSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   hashedPassword: z.string(),
-  name: z.string().min(1).max(100),
-  bio: z.string().max(500).optional(),
+  name: z.string().min(USER.MIN_NAME_LENGTH).max(USER.MAX_NAME_LENGTH),
+  bio: z.string().max(USER.MAX_BIO_LENGTH).optional(),
   avatar: z.string().url().optional(),
   role: userRoleSchema,
   status: userStatusSchema,
@@ -63,23 +64,23 @@ export type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 
 export const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8).max(128),
-  name: z.string().min(1).max(100),
-  bio: z.string().max(500).optional(),
+  password: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
+  name: z.string().min(USER.MIN_NAME_LENGTH).max(USER.MAX_NAME_LENGTH),
+  bio: z.string().max(USER.MAX_BIO_LENGTH).optional(),
   avatar: z.string().url().optional(),
 });
 export type CreateUserParams = z.infer<typeof createUserSchema>;
 
 export const updateUserProfileSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  bio: z.string().max(500).optional(),
+  name: z.string().min(USER.MIN_NAME_LENGTH).max(USER.MAX_NAME_LENGTH).optional(),
+  bio: z.string().max(USER.MAX_BIO_LENGTH).optional(),
   avatar: z.string().url().optional(),
 });
 export type UpdateUserProfileParams = z.infer<typeof updateUserProfileSchema>;
 
 export const updateUserPasswordSchema = z.object({
-  currentPassword: z.string().min(8).max(128),
-  newPassword: z.string().min(8).max(128),
+  currentPassword: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
+  newPassword: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
 });
 export type UpdateUserPasswordParams = z.infer<typeof updateUserPasswordSchema>;
 
@@ -96,7 +97,7 @@ export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
 
 export const passwordResetSchema = z.object({
   token: z.string().min(1),
-  newPassword: z.string().min(8).max(128),
+  newPassword: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
 });
 export type PasswordResetParams = z.infer<typeof passwordResetSchema>;
 

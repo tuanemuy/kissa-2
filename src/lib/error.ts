@@ -1,9 +1,11 @@
 export class AnyError extends Error {
   override readonly name: string = "AnyError";
   override readonly cause?: AnyError | Error;
+  readonly code?: string;
 
-  constructor(message: string, cause?: unknown) {
+  constructor(message: string, code?: string, cause?: unknown) {
     super(message);
+    this.code = code;
     this.cause = isError(cause) ? cause : undefined;
   }
 }
@@ -18,12 +20,12 @@ export function fromUnknown(error: unknown): AnyError {
       return error;
     }
 
-    return new AnyError(error.message, error);
+    return new AnyError(error.message, "UNKNOWN_ERROR", error);
   }
 
   if (typeof error === "string") {
-    return new AnyError(error);
+    return new AnyError(error, "STRING_ERROR");
   }
 
-  return new AnyError("Unknown error occurred", error);
+  return new AnyError("Unknown error occurred", "UNKNOWN_ERROR", error);
 }

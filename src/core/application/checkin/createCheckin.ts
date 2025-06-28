@@ -3,12 +3,14 @@ import { err, ok, type Result } from "neverthrow";
 import type { Checkin } from "@/core/domain/checkin/types";
 import type { Context } from "../context";
 import { AnyError } from "@/lib/error";
+import { ERROR_CODES } from "@/lib/errorCodes";
+import { LOCATION } from "@/core/domain/constants";
 
 export class CreateCheckinError extends AnyError {
   override readonly name = "CreateCheckinError";
   
-  constructor(message: string, cause?: unknown) {
-    super(message, cause);
+  constructor(message: string, code?: string, cause?: unknown) {
+    super(message, code, cause);
   }
 }
 
@@ -37,46 +39,46 @@ export async function createCheckin(
     // Verify user exists and is active
     const userResult = await context.userRepository.findById(userId);
     if (userResult.isErr()) {
-      return err(new CreateCheckinError("Failed to find user", userResult.error));
+      return err(new CreateCheckinError("Failed to find user", ERROR_CODES.INTERNAL_ERROR, userResult.error));
     }
 
     const user = userResult.value;
     if (!user) {
-      return err(new CreateCheckinError("User not found"));
+      return err(new CreateCheckinError("User not found", ERROR_CODES.USER_NOT_FOUND));
     }
 
     if (user.status !== "active") {
-      return err(new CreateCheckinError("User account is not active"));
+      return err(new CreateCheckinError("User account is not active", ERROR_CODES.USER_INACTIVE));
     }
 
     // Verify place exists
     const placeResult = await context.placeRepository.findById(input.placeId);
     if (placeResult.isErr()) {
-      return err(new CreateCheckinError("Failed to find place", placeResult.error));
+      return err(new CreateCheckinError("Failed to find place", ERROR_CODES.INTERNAL_ERROR, placeResult.error));
     }
 
     const place = placeResult.value;
     if (!place) {
-      return err(new CreateCheckinError("Place not found"));
+      return err(new CreateCheckinError("Place not found", ERROR_CODES.PLACE_NOT_FOUND));
     }
 
     if (place.status !== "published") {
-      return err(new CreateCheckinError("Cannot check in to unpublished place"));
+      return err(new CreateCheckinError("Cannot check in to unpublished place", ERROR_CODES.PLACE_NOT_PUBLISHED));
     }
 
     // Validate user location against place location
     const locationValidationResult = await context.locationService.validateUserLocation({
       userLocation: input.userLocation,
       placeLocation: place.coordinates,
-      maxDistanceMeters: 500, // 500 meters default
+      maxDistanceMeters: LOCATION.DEFAULT_CHECKIN_DISTANCE_METERS,
     });
 
     if (locationValidationResult.isErr()) {
-      return err(new CreateCheckinError("Failed to validate location", locationValidationResult.error));
+      return err(new CreateCheckinError("Failed to validate location", ERROR_CODES.LOCATION_VALIDATION_FAILED, locationValidationResult.error));
     }
 
     if (!locationValidationResult.value) {
-      return err(new CreateCheckinError("User location is too far from place"));
+      return err(new CreateCheckinError("User location is too far from place", ERROR_CODES.CHECKIN_TOO_FAR));
     }
 
     // Check if user has already checked in to this place recently (within 24 hours)
@@ -86,59 +88,67 @@ export async function createCheckin(
       console.error("Failed to check recent checkin:", hasRecentCheckin.error);
     }
 
-    // Create checkin
-    const checkinResult = await context.checkinRepository.create(userId, {
-      placeId: input.placeId,
-      comment: input.comment,
-      rating: input.rating,
-      userLocation: input.userLocation,
-      isPrivate: input.isPrivate,
-    });
-
-    if (checkinResult.isErr()) {
-      return err(new CreateCheckinError("Failed to create checkin", checkinResult.error));
-    }
-
-    const checkin = checkinResult.value;
-
-    // Add photos if provided
-    if (input.photos.length > 0) {
-      const photosResult = await context.checkinPhotoRepository.add({
-        checkinId: checkin.id,
-        photos: input.photos,
+    // Execute checkin creation and related updates in a transaction
+    const transactionResult = await context.withTransaction(async (txContext) => {
+      // Create checkin
+      const checkinResult = await txContext.checkinRepository.create(userId, {
+        placeId: input.placeId,
+        comment: input.comment,
+        rating: input.rating,
+        userLocation: input.userLocation,
+        isPrivate: input.isPrivate,
       });
 
-      if (photosResult.isErr()) {
-        // Log error but don't fail checkin
-        console.error("Failed to add checkin photos:", photosResult.error);
+      if (checkinResult.isErr()) {
+        return err(new CreateCheckinError("Failed to create checkin", ERROR_CODES.INTERNAL_ERROR, checkinResult.error));
       }
-    }
 
-    // Update place statistics
-    const updateCheckinCountResult = await context.placeRepository.updateCheckinCount(input.placeId);
-    if (updateCheckinCountResult.isErr()) {
-      // Log error but don't fail checkin
-      console.error("Failed to update place checkin count:", updateCheckinCountResult.error);
-    }
+      const checkin = checkinResult.value;
 
-    // If user provided a rating, update place rating
-    if (input.rating) {
-      const placeStatsResult = await context.checkinRepository.getPlaceStats(input.placeId);
-      if (placeStatsResult.isOk()) {
-        const updateRatingResult = await context.placeRepository.updateRating(
+      // Add photos if provided
+      if (input.photos.length > 0) {
+        const photosResult = await txContext.checkinPhotoRepository.add({
+          checkinId: checkin.id,
+          photos: input.photos,
+        });
+
+        if (photosResult.isErr()) {
+          return err(new CreateCheckinError("Failed to add checkin photos", ERROR_CODES.PHOTOS_UPLOAD_FAILED, photosResult.error));
+        }
+      }
+
+      // Update place checkin count
+      const updateCheckinCountResult = await txContext.placeRepository.updateCheckinCount(input.placeId);
+      if (updateCheckinCountResult.isErr()) {
+        return err(new CreateCheckinError("Failed to update place checkin count", updateCheckinCountResult.error));
+      }
+
+      // If user provided a rating, update place rating
+      if (input.rating) {
+        const placeStatsResult = await txContext.checkinRepository.getPlaceStats(input.placeId);
+        if (placeStatsResult.isErr()) {
+          return err(new CreateCheckinError("Failed to get place stats", placeStatsResult.error));
+        }
+
+        const updateRatingResult = await txContext.placeRepository.updateRating(
           input.placeId,
           placeStatsResult.value.averageRating
         );
 
         if (updateRatingResult.isErr()) {
-          // Log error but don't fail checkin
-          console.error("Failed to update place rating:", updateRatingResult.error);
+          return err(new CreateCheckinError("Failed to update place rating", updateRatingResult.error));
         }
       }
+
+      return ok(checkin);
+    });
+
+    if (transactionResult.isErr()) {
+      return err(new CreateCheckinError("Transaction failed", ERROR_CODES.TRANSACTION_FAILED, transactionResult.error));
     }
 
-    return ok(checkin);
+    return transactionResult;
   } catch (error) {
-    return err(new CreateCheckinError("Unexpected error during checkin creation", error));
+    return err(new CreateCheckinError("Unexpected error during checkin creation", ERROR_CODES.INTERNAL_ERROR, error));
   }
 }

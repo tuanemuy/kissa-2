@@ -341,3 +341,127 @@ export class DrizzlePgliteUserRepository implements UserRepository {
     }
   }
 }
+
+export class DrizzlePgliteUserSubscriptionRepository implements UserSubscriptionRepository {
+  constructor(private readonly db: Database) {}
+
+  async create(
+    subscription: Omit<UserSubscription, "id" | "createdAt" | "updatedAt">,
+  ): Promise<Result<UserSubscription, UserRepositoryError>> {
+    try {
+      const result = await this.db
+        .insert(userSubscriptions)
+        .values({
+          userId: subscription.userId,
+          plan: subscription.plan,
+          status: subscription.status,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        })
+        .returning();
+
+      const userSubscription = result[0];
+      if (!userSubscription) {
+        return err(new UserRepositoryError("Failed to create subscription"));
+      }
+
+      return validate(userSubscriptionSchema, userSubscription).mapErr(
+        (error) => {
+          return new UserRepositoryError("Invalid subscription data", error);
+        },
+      );
+    } catch (error) {
+      return err(
+        new UserRepositoryError("Failed to create user subscription", error),
+      );
+    }
+  }
+
+  async findByUserId(
+    userId: string,
+  ): Promise<Result<UserSubscription | null, UserRepositoryError>> {
+    try {
+      const result = await this.db
+        .select()
+        .from(userSubscriptions)
+        .where(eq(userSubscriptions.userId, userId))
+        .limit(1);
+
+      const subscription = result[0];
+      if (!subscription) {
+        return ok(null);
+      }
+
+      return validate(userSubscriptionSchema, subscription).mapErr((error) => {
+        return new UserRepositoryError("Invalid subscription data", error);
+      });
+    } catch (error) {
+      return err(
+        new UserRepositoryError("Failed to find user subscription", error),
+      );
+    }
+  }
+
+  async update(
+    id: string,
+    params: Partial<
+      Pick<
+        UserSubscription,
+        | "plan"
+        | "status"
+        | "currentPeriodStart"
+        | "currentPeriodEnd"
+        | "cancelAtPeriodEnd"
+      >
+    >,
+  ): Promise<Result<UserSubscription, UserRepositoryError>> {
+    try {
+      const result = await this.db
+        .update(userSubscriptions)
+        .set(params)
+        .where(eq(userSubscriptions.id, id))
+        .returning();
+
+      const subscription = result[0];
+      if (!subscription) {
+        return err(new UserRepositoryError("Subscription not found"));
+      }
+
+      return validate(userSubscriptionSchema, subscription).mapErr((error) => {
+        return new UserRepositoryError("Invalid subscription data", error);
+      });
+    } catch (error) {
+      return err(
+        new UserRepositoryError("Failed to update user subscription", error),
+      );
+    }
+  }
+
+  async cancel(
+    id: string,
+  ): Promise<Result<UserSubscription, UserRepositoryError>> {
+    try {
+      const result = await this.db
+        .update(userSubscriptions)
+        .set({
+          cancelAtPeriodEnd: true,
+        })
+        .where(eq(userSubscriptions.id, id))
+        .returning();
+
+      const subscription = result[0];
+      if (!subscription) {
+        return err(new UserRepositoryError("Subscription not found"));
+      }
+
+      return validate(userSubscriptionSchema, subscription).mapErr((error) => {
+        return new UserRepositoryError("Invalid subscription data", error);
+      });
+    } catch (error) {
+      return err(
+        new UserRepositoryError("Failed to cancel user subscription", error),
+      );
+    }
+  }
+}

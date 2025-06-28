@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { paginationSchema } from "@/lib/pagination";
 import { coordinatesSchema } from "../region/types";
+import { PLACE, LOCATION } from "../constants";
 
 export const placeStatusSchema = z.enum(["draft", "published", "archived"]);
 export type PlaceStatus = z.infer<typeof placeStatusSchema>;
@@ -50,21 +51,21 @@ export type BusinessHours = z.infer<typeof businessHoursSchema>;
 
 export const placeSchema = z.object({
   id: z.string().uuid(),
-  name: z.string().min(1).max(200),
-  description: z.string().max(2000).optional(),
-  shortDescription: z.string().max(300).optional(),
+  name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH),
+  description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
   category: placeCategorySchema,
   regionId: z.string().uuid(),
   coordinates: coordinatesSchema,
-  address: z.string().max(500),
-  phone: z.string().max(20).optional(),
+  address: z.string().max(PLACE.MAX_ADDRESS_LENGTH),
+  phone: z.string().max(PLACE.MAX_PHONE_LENGTH).optional(),
   website: z.string().url().optional(),
   email: z.string().email().optional(),
   status: placeStatusSchema,
   createdBy: z.string().uuid(),
   coverImage: z.string().url().optional(),
   images: z.array(z.string().url()).default([]),
-  tags: z.array(z.string().max(50)).default([]),
+  tags: z.array(z.string().max(PLACE.MAX_TAG_LENGTH)).default([]),
   businessHours: z.array(businessHoursSchema).default([]),
   visitCount: z.number().int().min(0).default(0),
   favoriteCount: z.number().int().min(0).default(0),
@@ -96,31 +97,31 @@ export const placePermissionSchema = z.object({
 export type PlacePermission = z.infer<typeof placePermissionSchema>;
 
 export const createPlaceSchema = z.object({
-  name: z.string().min(1).max(200),
-  description: z.string().max(2000).optional(),
-  shortDescription: z.string().max(300).optional(),
+  name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH),
+  description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
   category: placeCategorySchema,
   regionId: z.string().uuid(),
   coordinates: coordinatesSchema,
-  address: z.string().max(500),
-  phone: z.string().max(20).optional(),
+  address: z.string().max(PLACE.MAX_ADDRESS_LENGTH),
+  phone: z.string().max(PLACE.MAX_PHONE_LENGTH).optional(),
   website: z.string().url().optional(),
   email: z.string().email().optional(),
   coverImage: z.string().url().optional(),
   images: z.array(z.string().url()).default([]),
-  tags: z.array(z.string().max(50)).default([]),
+  tags: z.array(z.string().max(PLACE.MAX_TAG_LENGTH)).default([]),
   businessHours: z.array(businessHoursSchema).default([]),
 });
 export type CreatePlaceParams = z.infer<typeof createPlaceSchema>;
 
 export const updatePlaceSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  description: z.string().max(2000).optional(),
-  shortDescription: z.string().max(300).optional(),
+  name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH).optional(),
+  description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
   category: placeCategorySchema.optional(),
   coordinates: coordinatesSchema.optional(),
-  address: z.string().max(500).optional(),
-  phone: z.string().max(20).optional(),
+  address: z.string().max(PLACE.MAX_ADDRESS_LENGTH).optional(),
+  phone: z.string().max(PLACE.MAX_PHONE_LENGTH).optional(),
   website: z.string().url().optional(),
   email: z.string().email().optional(),
   coverImage: z.string().url().optional(),
@@ -143,7 +144,7 @@ export const listPlacesQuerySchema = z.object({
       location: z
         .object({
           coordinates: coordinatesSchema,
-          radiusKm: z.number().min(0.1).max(50),
+          radiusKm: z.number().min(LOCATION.MIN_SEARCH_RADIUS_KM).max(LOCATION.MAX_SEARCH_RADIUS_KM),
         })
         .optional(),
       hasPermission: z.boolean().optional(),

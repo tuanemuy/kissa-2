@@ -1,5 +1,6 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { ERROR_CODES } from "@/lib/errorCodes";
 import type {
   CreateUserParams,
   EmailVerificationToken,
@@ -17,8 +18,8 @@ import type {
 export class UserRepositoryError extends AnyError {
   override readonly name = "UserRepositoryError";
 
-  constructor(message: string, cause?: unknown) {
-    super(message, cause);
+  constructor(message: string, code?: string, cause?: unknown) {
+    super(message, code, cause);
   }
 }
 

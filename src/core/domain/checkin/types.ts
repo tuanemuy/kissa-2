@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { paginationSchema } from "@/lib/pagination";
 import { coordinatesSchema } from "../region/types";
+import { CHECKIN, LOCATION } from "../constants";
 
 export const checkinStatusSchema = z.enum([
   "active",
@@ -14,8 +15,8 @@ export const checkinSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().uuid(),
   placeId: z.string().uuid(),
-  comment: z.string().max(1000).optional(),
-  rating: z.number().int().min(1).max(5).optional(),
+  comment: z.string().max(CHECKIN.MAX_COMMENT_LENGTH).optional(),
+  rating: z.number().int().min(CHECKIN.MIN_RATING).max(CHECKIN.MAX_RATING).optional(),
   photos: z.array(z.string().url()).default([]),
   userLocation: coordinatesSchema.optional(),
   status: checkinStatusSchema.default("active"),
@@ -29,7 +30,7 @@ export const checkinPhotoSchema = z.object({
   id: z.string().uuid(),
   checkinId: z.string().uuid(),
   url: z.string().url(),
-  caption: z.string().max(200).optional(),
+  caption: z.string().max(CHECKIN.MAX_CAPTION_LENGTH).optional(),
   displayOrder: z.number().int().min(0).default(0),
   createdAt: z.date(),
 });
@@ -37,16 +38,16 @@ export type CheckinPhoto = z.infer<typeof checkinPhotoSchema>;
 
 export const createCheckinSchema = z.object({
   placeId: z.string().uuid(),
-  comment: z.string().max(1000).optional(),
-  rating: z.number().int().min(1).max(5).optional(),
+  comment: z.string().max(CHECKIN.MAX_COMMENT_LENGTH).optional(),
+  rating: z.number().int().min(CHECKIN.MIN_RATING).max(CHECKIN.MAX_RATING).optional(),
   userLocation: coordinatesSchema,
   isPrivate: z.boolean().default(false),
 });
 export type CreateCheckinParams = z.infer<typeof createCheckinSchema>;
 
 export const updateCheckinSchema = z.object({
-  comment: z.string().max(1000).optional(),
-  rating: z.number().int().min(1).max(5).optional(),
+  comment: z.string().max(CHECKIN.MAX_COMMENT_LENGTH).optional(),
+  rating: z.number().int().min(CHECKIN.MIN_RATING).max(CHECKIN.MAX_RATING).optional(),
   isPrivate: z.boolean().optional(),
 });
 export type UpdateCheckinParams = z.infer<typeof updateCheckinSchema>;
@@ -56,7 +57,7 @@ export const uploadCheckinPhotosSchema = z.object({
   photos: z.array(
     z.object({
       url: z.string().url(),
-      caption: z.string().max(200).optional(),
+      caption: z.string().max(CHECKIN.MAX_CAPTION_LENGTH).optional(),
     }),
   ),
 });
@@ -95,7 +96,7 @@ export type ListCheckinsQuery = z.infer<typeof listCheckinsQuerySchema>;
 export const validateLocationSchema = z.object({
   userLocation: coordinatesSchema,
   placeLocation: coordinatesSchema,
-  maxDistanceMeters: z.number().int().min(1).max(10000).default(500),
+  maxDistanceMeters: z.number().int().min(1).max(LOCATION.MAX_CHECKIN_DISTANCE_METERS).default(LOCATION.DEFAULT_CHECKIN_DISTANCE_METERS),
 });
 export type ValidateLocationParams = z.infer<typeof validateLocationSchema>;
 
