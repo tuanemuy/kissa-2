@@ -4,6 +4,7 @@ import {
   getDatabase,
   withTransaction,
 } from "@/core/adapters/drizzlePglite/client";
+import { DrizzlePglitePlacePermissionRepository } from "@/core/adapters/drizzlePglite/placeRepository";
 import {
   DrizzlePgliteUserRepository,
   DrizzlePgliteUserSubscriptionRepository,
@@ -15,7 +16,10 @@ import type {
   CheckinRepository,
 } from "@/core/domain/checkin/ports/checkinRepository";
 import type { LocationService } from "@/core/domain/checkin/ports/locationService";
-import type { PlaceRepository } from "@/core/domain/place/ports/placeRepository";
+import type {
+  PlacePermissionRepository,
+  PlaceRepository,
+} from "@/core/domain/place/ports/placeRepository";
 import type { RegionRepository } from "@/core/domain/region/ports/regionRepository";
 import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
 import type {
@@ -48,6 +52,9 @@ const db = getDatabase(env.data.DATABASE_DIRECTORY);
 // Create repository instances
 const userRepository = new DrizzlePgliteUserRepository(db);
 const userSubscriptionRepository = new DrizzlePgliteUserSubscriptionRepository(
+  db,
+);
+const placePermissionRepository = new DrizzlePglitePlacePermissionRepository(
   db,
 );
 
@@ -94,6 +101,7 @@ export const context: Context = {
 
   // Place repositories
   placeRepository: createRepositoryStub() as PlaceRepository,
+  placePermissionRepository,
 
   // Checkin repositories and services
   checkinRepository: createRepositoryStub() as CheckinRepository,

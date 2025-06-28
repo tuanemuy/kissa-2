@@ -308,10 +308,7 @@ export class DrizzlePgliteUserRepository implements UserRepository {
           .limit(limit)
           .offset(offset)
           .orderBy(desc(users.createdAt)),
-        this.db
-          .select({ count: count() })
-          .from(users)
-          .where(whereCondition),
+        this.db.select({ count: count() }).from(users).where(whereCondition),
       ]);
 
       const validatedItems = items

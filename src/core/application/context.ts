@@ -5,7 +5,10 @@ import type {
   CheckinRepository,
 } from "@/core/domain/checkin/ports/checkinRepository";
 import type { LocationService } from "@/core/domain/checkin/ports/locationService";
-import type { PlaceRepository } from "@/core/domain/place/ports/placeRepository";
+import type {
+  PlacePermissionRepository,
+  PlaceRepository,
+} from "@/core/domain/place/ports/placeRepository";
 import type { RegionRepository } from "@/core/domain/region/ports/regionRepository";
 import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
 import type {
@@ -40,6 +43,7 @@ export interface Context {
 
   // Place repositories
   placeRepository: PlaceRepository;
+  placePermissionRepository: PlacePermissionRepository;
 
   // Checkin repositories and services
   checkinRepository: CheckinRepository;

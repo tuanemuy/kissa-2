@@ -338,10 +338,7 @@ export class DrizzlePgliteCheckinRepository implements CheckinRepository {
           .limit(limit)
           .offset(offset)
           .orderBy(orderBy(sortColumn)),
-        this.db
-          .select({ count: count() })
-          .from(checkins)
-          .where(whereCondition),
+        this.db.select({ count: count() }).from(checkins).where(whereCondition),
       ]);
 
       const checkinsWithDetails: CheckinWithDetails[] = [];

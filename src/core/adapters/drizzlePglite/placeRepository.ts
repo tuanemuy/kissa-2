@@ -384,10 +384,7 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
           .limit(limit)
           .offset(offset)
           .orderBy(orderBy(sortColumn)),
-        this.db
-          .select({ count: count() })
-          .from(places)
-          .where(whereCondition),
+        this.db.select({ count: count() }).from(places).where(whereCondition),
       ]);
 
       const placesWithStats: PlaceWithStats[] = [];
@@ -521,10 +518,7 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
           .limit(limit)
           .offset(offset)
           .orderBy(desc(places.visitCount), desc(places.favoriteCount)),
-        this.db
-          .select({ count: count() })
-          .from(places)
-          .where(whereCondition),
+        this.db.select({ count: count() }).from(places).where(whereCondition),
       ]);
 
       const placesWithStats: PlaceWithStats[] = [];

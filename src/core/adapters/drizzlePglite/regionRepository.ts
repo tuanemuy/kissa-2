@@ -327,10 +327,7 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
           .limit(limit)
           .offset(offset)
           .orderBy(orderBy(sortColumn)),
-        this.db
-          .select({ count: count() })
-          .from(regions)
-          .where(whereCondition),
+        this.db.select({ count: count() }).from(regions).where(whereCondition),
       ]);
 
       // Add user interaction data if userId is provided
@@ -442,10 +439,7 @@ export class DrizzlePgliteRegionRepository implements RegionRepository {
           .limit(limit)
           .offset(offset)
           .orderBy(desc(regions.visitCount), desc(regions.favoriteCount)),
-        this.db
-          .select({ count: count() })
-          .from(regions)
-          .where(whereCondition),
+        this.db.select({ count: count() }).from(regions).where(whereCondition),
       ]);
 
       // Process items similar to list method
