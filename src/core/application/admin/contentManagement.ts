@@ -315,7 +315,12 @@ export async function adminDeleteRegion(
 
     // Check if region has places
     const placesResult = await context.placeRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
       filter: { regionId },
     });
 
@@ -364,7 +369,16 @@ export async function adminDeleteRegion(
 export async function getContentStatistics(
   context: Context,
   adminUserId: string,
-): Promise<Result<{ users: { total: number; active: number; suspended: number }; regions: { total: number; published: number }; places: { total: number; published: number } }, AdminContentManagementError>> {
+): Promise<
+  Result<
+    {
+      users: { total: number; active: number; suspended: number };
+      regions: { total: number; published: number };
+      places: { total: number; published: number };
+    },
+    AdminContentManagementError
+  >
+> {
   try {
     // Check admin permissions
     const adminCheckResult = await checkAdminPermissions(context, adminUserId);
@@ -374,35 +388,70 @@ export async function getContentStatistics(
 
     // Get user statistics
     const allUsersResult = await context.userRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
     });
 
     const activeUsersResult = await context.userRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
       filter: { status: "active" },
     });
 
     const suspendedUsersResult = await context.userRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
       filter: { status: "suspended" },
     });
 
     // Get content statistics
     const allRegionsResult = await context.regionRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
     });
 
     const publishedRegionsResult = await context.regionRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
       filter: { status: "published" },
     });
 
     const allPlacesResult = await context.placeRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
     });
 
     const publishedPlacesResult = await context.placeRepository.list({
-      pagination: { page: 1, limit: 1, order: "desc", orderBy: "createdAt" },
+      pagination: {
+        page: 1,
+        limit: 1,
+        order: "desc" as const,
+        orderBy: "createdAt",
+      },
       filter: { status: "published" },
     });
 

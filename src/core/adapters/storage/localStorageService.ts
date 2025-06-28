@@ -176,7 +176,11 @@ export class LocalStorageService implements StorageService {
 
       return ok(fileInfo);
     } catch (error) {
-      if (error instanceof Error && 'code' in error && error.code === "ENOENT") {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
         return ok(null);
       }
       return err(new StorageServiceError("Failed to get file info", error));

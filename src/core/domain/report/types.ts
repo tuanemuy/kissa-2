@@ -114,3 +114,122 @@ export const reportStatsSchema = z.object({
   ),
 });
 export type ReportStats = z.infer<typeof reportStatsSchema>;
+
+// Subscription Analytics Types
+export const subscriptionPlanEnum = z.enum(["free", "standard", "premium"]);
+export type SubscriptionPlan = z.infer<typeof subscriptionPlanEnum>;
+
+export const subscriptionStatusEnum = z.enum([
+  "none",
+  "trial",
+  "active",
+  "expired",
+  "cancelled",
+]);
+export type SubscriptionStatus = z.infer<typeof subscriptionStatusEnum>;
+
+export const subscriptionAnalyticsSchema = z.object({
+  totalSubscribers: z.number().int().min(0),
+  activeSubscribers: z.number().int().min(0),
+  trialSubscribers: z.number().int().min(0),
+  expiredSubscribers: z.number().int().min(0),
+  cancelledSubscribers: z.number().int().min(0),
+  newSubscribersThisMonth: z.number().int().min(0),
+  newSubscribersThisWeek: z.number().int().min(0),
+  churnRate: z.number().min(0).max(100), // Percentage
+  conversionRate: z.number().min(0).max(100), // Trial to paid conversion
+  averageLifetimeValue: z.number().min(0),
+  totalRevenue: z.number().min(0),
+  monthlyRecurringRevenue: z.number().min(0),
+  planDistribution: z.array(
+    z.object({
+      plan: subscriptionPlanEnum,
+      count: z.number().int().min(0),
+      percentage: z.number().min(0).max(100),
+    }),
+  ),
+  statusDistribution: z.array(
+    z.object({
+      status: subscriptionStatusEnum,
+      count: z.number().int().min(0),
+      percentage: z.number().min(0).max(100),
+    }),
+  ),
+});
+export type SubscriptionAnalytics = z.infer<typeof subscriptionAnalyticsSchema>;
+
+export const subscriptionTrendDataSchema = z.object({
+  date: z.date(),
+  newSubscriptions: z.number().int().min(0),
+  cancellations: z.number().int().min(0),
+  revenue: z.number().min(0),
+  activeSubscribers: z.number().int().min(0),
+});
+export type SubscriptionTrendData = z.infer<typeof subscriptionTrendDataSchema>;
+
+export const subscriptionReportQuerySchema = z.object({
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
+  plan: subscriptionPlanEnum.optional(),
+  status: subscriptionStatusEnum.optional(),
+  granularity: z.enum(["daily", "weekly", "monthly"]).default("daily"),
+});
+export type SubscriptionReportQuery = z.infer<
+  typeof subscriptionReportQuerySchema
+>;
+
+export const userActivityAnalyticsSchema = z.object({
+  totalUsers: z.number().int().min(0),
+  activeUsers: z.number().int().min(0),
+  inactiveUsers: z.number().int().min(0),
+  newUsersThisMonth: z.number().int().min(0),
+  newUsersThisWeek: z.number().int().min(0),
+  totalCheckins: z.number().int().min(0),
+  checkinsThisMonth: z.number().int().min(0),
+  totalPlaces: z.number().int().min(0),
+  placesThisMonth: z.number().int().min(0),
+  totalRegions: z.number().int().min(0),
+  regionsThisMonth: z.number().int().min(0),
+  averageCheckinsPerUser: z.number().min(0),
+  topActiveUsers: z.array(
+    z.object({
+      userId: z.string().uuid(),
+      userName: z.string(),
+      checkinCount: z.number().int().min(0),
+      placeCount: z.number().int().min(0),
+    }),
+  ),
+});
+export type UserActivityAnalytics = z.infer<typeof userActivityAnalyticsSchema>;
+
+export const contentAnalyticsSchema = z.object({
+  totalRegions: z.number().int().min(0),
+  publishedRegions: z.number().int().min(0),
+  draftRegions: z.number().int().min(0),
+  archivedRegions: z.number().int().min(0),
+  totalPlaces: z.number().int().min(0),
+  publishedPlaces: z.number().int().min(0),
+  draftPlaces: z.number().int().min(0),
+  archivedPlaces: z.number().int().min(0),
+  totalCheckins: z.number().int().min(0),
+  checkinsWithPhotos: z.number().int().min(0),
+  checkinsWithRatings: z.number().int().min(0),
+  averageRating: z.number().min(0).max(5),
+  topCategories: z.array(
+    z.object({
+      category: z.string(),
+      count: z.number().int().min(0),
+    }),
+  ),
+  topRegions: z.array(
+    z.object({
+      regionId: z.string().uuid(),
+      regionName: z.string(),
+      placeCount: z.number().int().min(0),
+      checkinCount: z.number().int().min(0),
+    }),
+  ),
+});
+export type ContentAnalytics = z.infer<typeof contentAnalyticsSchema>;
