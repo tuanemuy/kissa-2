@@ -53,14 +53,14 @@ export interface StorageManager {
 ### Adapters example
 
 ```typescript
-// src/core/adapters/drizzleSqlite/postRepository.ts
+// src/core/adapters/drizzlePglite/postRepository.ts
 
 import type { Result } from "neverthrow";
 import type { PostRepository } from "@/domain/post/ports/postRepository";
 import { type CreatePostParams, type ListPostQuery, type Post, postSchema, } from "@/domain/post/types";
 import type { Database } from "./database";
 
-export class DrizzleSqlitePostRepository implements PostRepository {
+export class DrizzlePglitePostRepository implements PostRepository {
   constructor(private readonly db: Database) {}
 
   async create(params: CreatePostParams): Promise<Result<Post, RepositoryError>> {

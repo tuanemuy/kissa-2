@@ -9,7 +9,7 @@
 
 ## タスク
 
-- 設計と実装を比較して、`docs/progress_test.md` を更新する
+- 設計と実装を比較して、`logs/${yyyyMMddHHmm}_progress_test.md` を更新する
 
 ## 備考
 

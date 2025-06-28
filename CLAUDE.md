@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Runtime**: Node.js 22.x
 - **Frontend**: Next.js 15 with React 19, Tailwind CSS, shadcn/ui and React Hook Form
-- **Database**: SQLite with Drizzle ORM
+- **Database**: PGlite with Drizzle ORM
 - **Validation**: Zod 4 schemas（ `import { z } from "zod/v4";` is valid for zod@^3）
 - **Error Handling**: neverthrow for Result types
 
