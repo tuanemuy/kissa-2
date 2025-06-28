@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import { err, ok, type Result } from "neverthrow";
 import {
@@ -395,48 +395,87 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
 
       const placesWithStats: PlaceWithStats[] = [];
 
+      // Optimize N+1 query problem by batch-fetching related data
+      const placeIds = items.map((item) => item.place.id);
+
+      // Batch fetch business hours for all places
+      const businessHoursMap = new Map<string, BusinessHours[]>();
+      if (placeIds.length > 0) {
+        const businessHoursResults = await this.db
+          .select()
+          .from(placeBusinessHours)
+          .where(inArray(placeBusinessHours.placeId, placeIds))
+          .orderBy(placeBusinessHours.dayOfWeek);
+
+        // Group business hours by place ID
+        for (const bh of businessHoursResults) {
+          if (!businessHoursMap.has(bh.placeId)) {
+            businessHoursMap.set(bh.placeId, []);
+          }
+          businessHoursMap.get(bh.placeId)?.push({
+            dayOfWeek: bh.dayOfWeek,
+            openTime: bh.openTime || undefined,
+            closeTime: bh.closeTime || undefined,
+            isClosed: bh.isClosed,
+          });
+        }
+      }
+
+      // Batch fetch user interactions if userId is provided
+      const favoriteMap = new Map<string, boolean>();
+      const permissionMap = new Map<
+        string,
+        { canEdit: boolean; canDelete: boolean }
+      >();
+
+      if (userId && placeIds.length > 0) {
+        const [favoriteResults, permissionResults] = await Promise.all([
+          this.db
+            .select()
+            .from(placeFavorites)
+            .where(
+              and(
+                eq(placeFavorites.userId, userId),
+                inArray(placeFavorites.placeId, placeIds),
+              ),
+            ),
+          this.db
+            .select()
+            .from(placePermissions)
+            .where(
+              and(
+                eq(placePermissions.userId, userId),
+                inArray(placePermissions.placeId, placeIds),
+              ),
+            ),
+        ]);
+
+        // Create lookup maps
+        favoriteResults.forEach((fav) => {
+          favoriteMap.set(fav.placeId, true);
+        });
+
+        permissionResults.forEach((perm) => {
+          permissionMap.set(perm.placeId, {
+            canEdit: perm.canEdit,
+            canDelete: perm.canDelete,
+          });
+        });
+      }
+
+      // Process items using the lookup maps
       for (const item of items) {
-        const businessHours = await this._getBusinessHours(item.place.id);
+        const businessHours = businessHoursMap.get(item.place.id) || [];
+        const isFavorited = favoriteMap.get(item.place.id) || false;
+        const permission = permissionMap.get(item.place.id);
 
-        let isFavorited = false;
-        let hasEditPermission = false;
-        let hasDeletePermission = false;
+        let hasEditPermission = permission?.canEdit || false;
+        let hasDeletePermission = permission?.canDelete || false;
 
-        if (userId) {
-          const [favoriteResult, permissionResult] = await Promise.all([
-            this.db
-              .select()
-              .from(placeFavorites)
-              .where(
-                and(
-                  eq(placeFavorites.userId, userId),
-                  eq(placeFavorites.placeId, item.place.id),
-                ),
-              )
-              .limit(1),
-            this.db
-              .select()
-              .from(placePermissions)
-              .where(
-                and(
-                  eq(placePermissions.userId, userId),
-                  eq(placePermissions.placeId, item.place.id),
-                ),
-              )
-              .limit(1),
-          ]);
-
-          isFavorited = favoriteResult.length > 0;
-
-          if (permissionResult.length > 0) {
-            hasEditPermission = permissionResult[0].canEdit;
-            hasDeletePermission = permissionResult[0].canDelete;
-          }
-
-          if (item.place.createdBy === userId) {
-            hasEditPermission = true;
-            hasDeletePermission = true;
-          }
+        // Owner has all permissions
+        if (userId && item.place.createdBy === userId) {
+          hasEditPermission = true;
+          hasDeletePermission = true;
         }
 
         const placeWithStats = {
@@ -549,48 +588,87 @@ export class DrizzlePglitePlaceRepository implements PlaceRepository {
 
       const placesWithStats: PlaceWithStats[] = [];
 
+      // Optimize N+1 query problem by batch-fetching related data
+      const placeIds = items.map((item) => item.place.id);
+
+      // Batch fetch business hours for all places
+      const businessHoursMap = new Map<string, BusinessHours[]>();
+      if (placeIds.length > 0) {
+        const businessHoursResults = await this.db
+          .select()
+          .from(placeBusinessHours)
+          .where(inArray(placeBusinessHours.placeId, placeIds))
+          .orderBy(placeBusinessHours.dayOfWeek);
+
+        // Group business hours by place ID
+        for (const bh of businessHoursResults) {
+          if (!businessHoursMap.has(bh.placeId)) {
+            businessHoursMap.set(bh.placeId, []);
+          }
+          businessHoursMap.get(bh.placeId)?.push({
+            dayOfWeek: bh.dayOfWeek,
+            openTime: bh.openTime || undefined,
+            closeTime: bh.closeTime || undefined,
+            isClosed: bh.isClosed,
+          });
+        }
+      }
+
+      // Batch fetch user interactions if userId is provided
+      const favoriteMap = new Map<string, boolean>();
+      const permissionMap = new Map<
+        string,
+        { canEdit: boolean; canDelete: boolean }
+      >();
+
+      if (userId && placeIds.length > 0) {
+        const [favoriteResults, permissionResults] = await Promise.all([
+          this.db
+            .select()
+            .from(placeFavorites)
+            .where(
+              and(
+                eq(placeFavorites.userId, userId),
+                inArray(placeFavorites.placeId, placeIds),
+              ),
+            ),
+          this.db
+            .select()
+            .from(placePermissions)
+            .where(
+              and(
+                eq(placePermissions.userId, userId),
+                inArray(placePermissions.placeId, placeIds),
+              ),
+            ),
+        ]);
+
+        // Create lookup maps
+        favoriteResults.forEach((fav) => {
+          favoriteMap.set(fav.placeId, true);
+        });
+
+        permissionResults.forEach((perm) => {
+          permissionMap.set(perm.placeId, {
+            canEdit: perm.canEdit,
+            canDelete: perm.canDelete,
+          });
+        });
+      }
+
+      // Process items using the lookup maps
       for (const item of items) {
-        const businessHours = await this._getBusinessHours(item.place.id);
+        const businessHours = businessHoursMap.get(item.place.id) || [];
+        const isFavorited = favoriteMap.get(item.place.id) || false;
+        const permission = permissionMap.get(item.place.id);
 
-        let isFavorited = false;
-        let hasEditPermission = false;
-        let hasDeletePermission = false;
+        let hasEditPermission = permission?.canEdit || false;
+        let hasDeletePermission = permission?.canDelete || false;
 
-        if (userId) {
-          const [favoriteResult, permissionResult] = await Promise.all([
-            this.db
-              .select()
-              .from(placeFavorites)
-              .where(
-                and(
-                  eq(placeFavorites.userId, userId),
-                  eq(placeFavorites.placeId, item.place.id),
-                ),
-              )
-              .limit(1),
-            this.db
-              .select()
-              .from(placePermissions)
-              .where(
-                and(
-                  eq(placePermissions.userId, userId),
-                  eq(placePermissions.placeId, item.place.id),
-                ),
-              )
-              .limit(1),
-          ]);
-
-          isFavorited = favoriteResult.length > 0;
-
-          if (permissionResult.length > 0) {
-            hasEditPermission = permissionResult[0].canEdit;
-            hasDeletePermission = permissionResult[0].canDelete;
-          }
-
-          if (item.place.createdBy === userId) {
-            hasEditPermission = true;
-            hasDeletePermission = true;
-          }
+        // Owner has all permissions
+        if (userId && item.place.createdBy === userId) {
+          hasEditPermission = true;
+          hasDeletePermission = true;
         }
 
         const placeWithStats = {
