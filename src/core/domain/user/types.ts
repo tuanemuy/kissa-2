@@ -64,7 +64,10 @@ export type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 
 export const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
+  password: z
+    .string()
+    .min(USER.MIN_PASSWORD_LENGTH)
+    .max(USER.MAX_PASSWORD_LENGTH),
   name: z.string().min(USER.MIN_NAME_LENGTH).max(USER.MAX_NAME_LENGTH),
   bio: z.string().max(USER.MAX_BIO_LENGTH).optional(),
   avatar: z.string().url().optional(),
@@ -72,15 +75,25 @@ export const createUserSchema = z.object({
 export type CreateUserParams = z.infer<typeof createUserSchema>;
 
 export const updateUserProfileSchema = z.object({
-  name: z.string().min(USER.MIN_NAME_LENGTH).max(USER.MAX_NAME_LENGTH).optional(),
+  name: z
+    .string()
+    .min(USER.MIN_NAME_LENGTH)
+    .max(USER.MAX_NAME_LENGTH)
+    .optional(),
   bio: z.string().max(USER.MAX_BIO_LENGTH).optional(),
   avatar: z.string().url().optional(),
 });
 export type UpdateUserProfileParams = z.infer<typeof updateUserProfileSchema>;
 
 export const updateUserPasswordSchema = z.object({
-  currentPassword: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
-  newPassword: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
+  currentPassword: z
+    .string()
+    .min(USER.MIN_PASSWORD_LENGTH)
+    .max(USER.MAX_PASSWORD_LENGTH),
+  newPassword: z
+    .string()
+    .min(USER.MIN_PASSWORD_LENGTH)
+    .max(USER.MAX_PASSWORD_LENGTH),
 });
 export type UpdateUserPasswordParams = z.infer<typeof updateUserPasswordSchema>;
 
@@ -97,7 +110,10 @@ export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
 
 export const passwordResetSchema = z.object({
   token: z.string().min(1),
-  newPassword: z.string().min(USER.MIN_PASSWORD_LENGTH).max(USER.MAX_PASSWORD_LENGTH),
+  newPassword: z
+    .string()
+    .min(USER.MIN_PASSWORD_LENGTH)
+    .max(USER.MAX_PASSWORD_LENGTH),
 });
 export type PasswordResetParams = z.infer<typeof passwordResetSchema>;
 
@@ -142,4 +158,15 @@ export const emailVerificationTokenSchema = z.object({
 });
 export type EmailVerificationToken = z.infer<
   typeof emailVerificationTokenSchema
+>;
+
+export const updateUserSubscriptionParamsSchema = z.object({
+  plan: subscriptionPlanSchema.optional(),
+  status: subscriptionStatusSchema.optional(),
+  currentPeriodStart: z.date().optional(),
+  currentPeriodEnd: z.date().optional(),
+  cancelAtPeriodEnd: z.boolean().optional(),
+});
+export type UpdateUserSubscriptionParams = z.infer<
+  typeof updateUserSubscriptionParamsSchema
 >;

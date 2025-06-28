@@ -3,19 +3,22 @@ import { drizzle } from "drizzle-orm/pglite";
 import { err, ok, type Result } from "neverthrow";
 import * as schema from "./schema";
 
-export type Database = ReturnType<typeof drizzle<typeof schema>>;
+export type Database = ReturnType<typeof drizzle<typeof schema>> & {
+  $client: PGlite;
+};
 
 export function getDatabase(directory: string) {
   const client = new PGlite(directory);
-  return drizzle({
+  const db = drizzle({
     client,
     schema,
   });
+  return Object.assign(db, { $client: client });
 }
 
 export class TransactionError extends Error {
   override readonly name = "TransactionError";
-  
+
   constructor(message: string, cause?: unknown) {
     super(message);
     this.cause = cause;
@@ -27,7 +30,7 @@ export class TransactionError extends Error {
  */
 export async function withTransaction<T>(
   db: Database,
-  fn: (tx: Database) => Promise<Result<T, Error>>
+  fn: (tx: Omit<Database, "$client">) => Promise<Result<T, Error>>,
 ): Promise<Result<T, TransactionError>> {
   try {
     return await db.transaction(async (tx) => {
@@ -36,7 +39,7 @@ export async function withTransaction<T>(
         // Rollback by throwing an error
         throw result.error;
       }
-      return result;
+      return ok(result.value);
     });
   } catch (error) {
     return err(new TransactionError("Transaction failed", error));

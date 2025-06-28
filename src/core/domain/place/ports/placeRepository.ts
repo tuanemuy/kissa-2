@@ -21,7 +21,7 @@ export class PlaceRepositoryError extends AnyError {
   override readonly name = "PlaceRepositoryError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 

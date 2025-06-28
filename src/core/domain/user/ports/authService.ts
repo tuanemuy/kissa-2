@@ -6,7 +6,7 @@ export class AuthServiceError extends AnyError {
   override readonly name = "AuthServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 

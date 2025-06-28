@@ -1,6 +1,6 @@
 /**
  * Business rules and domain constants
- * 
+ *
  * This file centralizes all business rules and domain-specific constants
  * used throughout the application to ensure consistency and ease of maintenance.
  */
@@ -8,7 +8,7 @@
 // Coordinate system configuration
 export const COORDINATE_SYSTEM = {
   /** Standard coordinate system used throughout the application */
-  SYSTEM: 'WGS84' as const,
+  SYSTEM: "WGS84" as const,
   /** Minimum latitude value */
   MIN_LATITUDE: -90,
   /** Maximum latitude value */

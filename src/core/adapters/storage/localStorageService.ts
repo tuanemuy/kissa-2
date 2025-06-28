@@ -1,6 +1,6 @@
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { err, ok, type Result } from "neverthrow";
-import { promises as fs } from "fs";
-import path from "path";
 import { v7 as uuidv7 } from "uuid";
 import {
   type StorageService,
@@ -21,7 +21,7 @@ export class LocalStorageService implements StorageService {
   constructor(private readonly config: LocalStorageConfig) {}
 
   async uploadFile(
-    params: UploadFileParams
+    params: UploadFileParams,
   ): Promise<Result<UploadedFile, StorageServiceError>> {
     try {
       // Validate file size
@@ -29,8 +29,8 @@ export class LocalStorageService implements StorageService {
         return err(
           new StorageServiceError(
             `File size exceeds maximum allowed size of ${this.config.maxFileSize} bytes`,
-            ERROR_CODES.STORAGE_SERVICE_FAILED
-          )
+            ERROR_CODES.STORAGE_SERVICE_FAILED,
+          ),
         );
       }
 
@@ -39,8 +39,8 @@ export class LocalStorageService implements StorageService {
         return err(
           new StorageServiceError(
             `MIME type ${params.mimeType} is not allowed`,
-            ERROR_CODES.STORAGE_SERVICE_FAILED
-          )
+            ERROR_CODES.STORAGE_SERVICE_FAILED,
+          ),
         );
       }
 
@@ -48,7 +48,7 @@ export class LocalStorageService implements StorageService {
       const fileExtension = path.extname(params.originalName);
       const uniqueId = uuidv7();
       const filename = `${uniqueId}${fileExtension}`;
-      
+
       // Create folder structure
       const folder = params.folder || "uploads";
       const folderPath = path.join(this.config.uploadDir, folder);
@@ -73,18 +73,12 @@ export class LocalStorageService implements StorageService {
 
       return ok(uploadedFile);
     } catch (error) {
-      return err(
-        new StorageServiceError(
-          "Failed to upload file",
-          ERROR_CODES.STORAGE_SERVICE_FAILED,
-          error
-        )
-      );
+      return err(new StorageServiceError("Failed to upload file", error));
     }
   }
 
   async uploadMultipleFiles(
-    files: UploadFileParams[]
+    files: UploadFileParams[],
   ): Promise<Result<UploadedFile[], StorageServiceError>> {
     try {
       const results: UploadedFile[] = [];
@@ -100,11 +94,7 @@ export class LocalStorageService implements StorageService {
       return ok(results);
     } catch (error) {
       return err(
-        new StorageServiceError(
-          "Failed to upload multiple files",
-          ERROR_CODES.STORAGE_SERVICE_FAILED,
-          error
-        )
+        new StorageServiceError("Failed to upload multiple files", error),
       );
     }
   }
@@ -117,8 +107,8 @@ export class LocalStorageService implements StorageService {
         return err(
           new StorageServiceError(
             "Invalid file URL",
-            ERROR_CODES.VALIDATION_ERROR
-          )
+            ERROR_CODES.VALIDATION_ERROR,
+          ),
         );
       }
 
@@ -128,18 +118,12 @@ export class LocalStorageService implements StorageService {
 
       return ok(undefined);
     } catch (error) {
-      return err(
-        new StorageServiceError(
-          "Failed to delete file",
-          ERROR_CODES.STORAGE_SERVICE_FAILED,
-          error
-        )
-      );
+      return err(new StorageServiceError("Failed to delete file", error));
     }
   }
 
   async deleteMultipleFiles(
-    urls: string[]
+    urls: string[],
   ): Promise<Result<void, StorageServiceError>> {
     try {
       for (const url of urls) {
@@ -153,17 +137,13 @@ export class LocalStorageService implements StorageService {
       return ok(undefined);
     } catch (error) {
       return err(
-        new StorageServiceError(
-          "Failed to delete multiple files",
-          ERROR_CODES.STORAGE_SERVICE_FAILED,
-          error
-        )
+        new StorageServiceError("Failed to delete multiple files", error),
       );
     }
   }
 
   async getFileInfo(
-    url: string
+    url: string,
   ): Promise<Result<UploadedFile | null, StorageServiceError>> {
     try {
       // Extract filename from URL
@@ -172,8 +152,8 @@ export class LocalStorageService implements StorageService {
         return err(
           new StorageServiceError(
             "Invalid file URL",
-            ERROR_CODES.VALIDATION_ERROR
-          )
+            ERROR_CODES.VALIDATION_ERROR,
+          ),
         );
       }
 
@@ -183,7 +163,7 @@ export class LocalStorageService implements StorageService {
 
       // Extract file ID from filename (assuming it's the UUID part)
       const basename = path.basename(filename, path.extname(filename));
-      
+
       const fileInfo: UploadedFile = {
         id: basename,
         originalName: filename,
@@ -196,23 +176,17 @@ export class LocalStorageService implements StorageService {
 
       return ok(fileInfo);
     } catch (error) {
-      if ((error as any).code === "ENOENT") {
+      if (error instanceof Error && 'code' in error && error.code === "ENOENT") {
         return ok(null);
       }
-      return err(
-        new StorageServiceError(
-          "Failed to get file info",
-          ERROR_CODES.STORAGE_SERVICE_FAILED,
-          error
-        )
-      );
+      return err(new StorageServiceError("Failed to get file info", error));
     }
   }
 
   async generateUploadUrl(
     filename: string,
-    mimeType: string,
-    folder?: string
+    _mimeType: string,
+    folder?: string,
   ): Promise<
     Result<{ uploadUrl: string; fileUrl: string }, StorageServiceError>
   > {
@@ -223,18 +197,14 @@ export class LocalStorageService implements StorageService {
       const fileExtension = path.extname(filename);
       const finalFilename = `${uniqueId}${fileExtension}`;
       const uploadPath = folder ? `${folder}/${finalFilename}` : finalFilename;
-      
+
       const uploadUrl = `${this.config.baseUrl}/upload/${uploadPath}`;
       const fileUrl = `${this.config.baseUrl}/${uploadPath}`;
 
       return ok({ uploadUrl, fileUrl });
     } catch (error) {
       return err(
-        new StorageServiceError(
-          "Failed to generate upload URL",
-          ERROR_CODES.STORAGE_SERVICE_FAILED,
-          error
-        )
+        new StorageServiceError("Failed to generate upload URL", error),
       );
     }
   }
@@ -258,7 +228,8 @@ export class LocalStorageService implements StorageService {
       ".pdf": "application/pdf",
       ".txt": "text/plain",
       ".doc": "application/msword",
-      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".docx":
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     };
 
     return mimeTypes[extension.toLowerCase()] || "application/octet-stream";

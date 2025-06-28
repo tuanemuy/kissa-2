@@ -5,7 +5,7 @@ export class StorageServiceError extends AnyError {
   override readonly name = "StorageServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 

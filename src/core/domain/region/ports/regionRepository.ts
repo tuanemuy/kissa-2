@@ -19,7 +19,7 @@ export class RegionRepositoryError extends AnyError {
   override readonly name = "RegionRepositoryError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 

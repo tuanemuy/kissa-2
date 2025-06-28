@@ -1,6 +1,32 @@
+import { err, type Result } from "neverthrow";
 import { z } from "zod/v4";
-import { getDatabase } from "@/core/adapters/drizzlePglite/client";
+import {
+  getDatabase,
+  withTransaction,
+} from "@/core/adapters/drizzlePglite/client";
+import {
+  DrizzlePgliteUserRepository,
+  DrizzlePgliteUserSubscriptionRepository,
+} from "@/core/adapters/drizzlePglite/userRepository";
+import { ConsoleEmailService } from "@/core/adapters/email/consoleEmailService";
 import type { Context } from "@/core/application/context";
+import type {
+  CheckinPhotoRepository,
+  CheckinRepository,
+} from "@/core/domain/checkin/ports/checkinRepository";
+import type { LocationService } from "@/core/domain/checkin/ports/locationService";
+import type { PlaceRepository } from "@/core/domain/place/ports/placeRepository";
+import type { RegionRepository } from "@/core/domain/region/ports/regionRepository";
+import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
+import type {
+  PasswordHasher,
+  TokenGenerator,
+} from "@/core/domain/user/ports/authService";
+import type {
+  EmailVerificationTokenRepository,
+  NotificationSettingsRepository,
+  UserSessionRepository,
+} from "@/core/domain/user/ports/userRepository";
 
 export const envSchema = z.object({
   NEXT_PUBLIC_URL: z.string().url(),
@@ -18,9 +44,74 @@ if (!env.success) {
 }
 
 const db = getDatabase(env.data.DATABASE_DIRECTORY);
-// const ${entity}Repository = new DrizzlePglite${Entity}Repository(db);
+
+// Create repository instances
+const userRepository = new DrizzlePgliteUserRepository(db);
+const userSubscriptionRepository = new DrizzlePgliteUserSubscriptionRepository(
+  db,
+);
+
+// Create email service
+const emailService = new ConsoleEmailService({
+  fromEmail: "noreply@example.com",
+  fromName: "Kissa App",
+  baseUrl: env.data.NEXT_PUBLIC_URL,
+});
+
+// Stub implementations for missing services - using Proxy for dynamic method handling
+const createRepositoryStub = () => {
+  return new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        if (typeof prop === "string") {
+          return async () => err(new Error(`Method ${prop} not implemented`));
+        }
+        return undefined;
+      },
+    },
+  );
+};
 
 export const context: Context = {
+  // Environment configuration
   publicUrl: env.data.NEXT_PUBLIC_URL,
-  // ${entity}Repository,
+
+  // User repositories and services
+  userRepository,
+  userSessionRepository: createRepositoryStub() as UserSessionRepository,
+  userSubscriptionRepository,
+  notificationSettingsRepository:
+    createRepositoryStub() as NotificationSettingsRepository,
+  emailVerificationTokenRepository:
+    createRepositoryStub() as EmailVerificationTokenRepository,
+  passwordHasher: createRepositoryStub() as PasswordHasher,
+  tokenGenerator: createRepositoryStub() as TokenGenerator,
+  emailService,
+
+  // Region repositories
+  regionRepository: createRepositoryStub() as RegionRepository,
+
+  // Place repositories
+  placeRepository: createRepositoryStub() as PlaceRepository,
+
+  // Checkin repositories and services
+  checkinRepository: createRepositoryStub() as CheckinRepository,
+  checkinPhotoRepository: createRepositoryStub() as CheckinPhotoRepository,
+  locationService: createRepositoryStub() as LocationService,
+
+  // Report repository
+  reportRepository: createRepositoryStub() as ReportRepository,
+
+  // Database transaction support
+  database: db,
+  withTransaction: <T>(fn: (txContext: Context) => Promise<Result<T, Error>>) =>
+    withTransaction(db, async (tx) => {
+      // Create a new context with the transaction database
+      const txContext: Context = {
+        ...context,
+        database: tx,
+      };
+      return await fn(txContext);
+    }),
 };

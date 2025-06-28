@@ -1,16 +1,12 @@
-import { z } from "zod/v4";
 import { err, ok, type Result } from "neverthrow";
-import type { User, UserRole, UserStatus, ListUsersQuery } from "@/core/domain/user/types";
-import type { Context } from "../context";
+import { z } from "zod/v4";
+import type { ListUsersQuery, User } from "@/core/domain/user/types";
 import { AnyError } from "@/lib/error";
 import { ERROR_CODES } from "@/lib/errorCodes";
+import type { Context } from "../context";
 
 export class AdminUserManagementError extends AnyError {
   override readonly name = "AdminUserManagementError";
-  
-  constructor(message: string, code?: string, cause?: unknown) {
-    super(message, code, cause);
-  }
 }
 
 export const updateUserRoleInputSchema = z.object({
@@ -28,15 +24,19 @@ export const updateUserStatusInputSchema = z.object({
 export type UpdateUserStatusInput = z.infer<typeof updateUserStatusInputSchema>;
 
 export const adminListUsersInputSchema = z.object({
-  pagination: z.object({
-    page: z.number().int().min(1).default(1),
-    size: z.number().int().min(1).max(100).default(20),
-  }).default({ page: 1, size: 20 }),
-  filter: z.object({
-    role: z.enum(["visitor", "editor", "admin"]).optional(),
-    status: z.enum(["active", "suspended", "deleted"]).optional(),
-    keyword: z.string().optional(),
-  }).optional(),
+  pagination: z
+    .object({
+      page: z.number().int().min(1).default(1),
+      size: z.number().int().min(1).max(100).default(20),
+    })
+    .default({ page: 1, size: 20 }),
+  filter: z
+    .object({
+      role: z.enum(["visitor", "editor", "admin"]).optional(),
+      status: z.enum(["active", "suspended", "deleted"]).optional(),
+      keyword: z.string().optional(),
+    })
+    .optional(),
 });
 export type AdminListUsersInput = z.infer<typeof adminListUsersInputSchema>;
 
@@ -45,24 +45,45 @@ export type AdminListUsersInput = z.infer<typeof adminListUsersInputSchema>;
  */
 async function checkAdminPermissions(
   context: Context,
-  adminUserId: string
+  adminUserId: string,
 ): Promise<Result<User, AdminUserManagementError>> {
   const adminResult = await context.userRepository.findById(adminUserId);
   if (adminResult.isErr()) {
-    return err(new AdminUserManagementError("Failed to find admin user", ERROR_CODES.INTERNAL_ERROR, adminResult.error));
+    return err(
+      new AdminUserManagementError(
+        "Failed to find admin user",
+        ERROR_CODES.INTERNAL_ERROR,
+        adminResult.error,
+      ),
+    );
   }
 
   const admin = adminResult.value;
   if (!admin) {
-    return err(new AdminUserManagementError("Admin user not found", ERROR_CODES.USER_NOT_FOUND));
+    return err(
+      new AdminUserManagementError(
+        "Admin user not found",
+        ERROR_CODES.USER_NOT_FOUND,
+      ),
+    );
   }
 
   if (admin.role !== "admin") {
-    return err(new AdminUserManagementError("Insufficient permissions: admin role required", ERROR_CODES.ADMIN_PERMISSION_REQUIRED));
+    return err(
+      new AdminUserManagementError(
+        "Insufficient permissions: admin role required",
+        ERROR_CODES.ADMIN_PERMISSION_REQUIRED,
+      ),
+    );
   }
 
   if (admin.status !== "active") {
-    return err(new AdminUserManagementError("Admin account is not active", ERROR_CODES.USER_INACTIVE));
+    return err(
+      new AdminUserManagementError(
+        "Admin account is not active",
+        ERROR_CODES.USER_INACTIVE,
+      ),
+    );
   }
 
   return ok(admin);
@@ -74,7 +95,7 @@ async function checkAdminPermissions(
 export async function adminListUsers(
   context: Context,
   adminUserId: string,
-  input: AdminListUsersInput
+  input: AdminListUsersInput,
 ): Promise<Result<{ items: User[]; count: number }, AdminUserManagementError>> {
   try {
     // Check admin permissions
@@ -85,19 +106,36 @@ export async function adminListUsers(
 
     // Build query
     const query: ListUsersQuery = {
-      pagination: input.pagination,
+      pagination: {
+        page: input.pagination.page,
+        limit: input.pagination.size,
+        order: "desc",
+        orderBy: "createdAt",
+      },
       filter: input.filter,
     };
 
     // List users
     const usersResult = await context.userRepository.list(query);
     if (usersResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to list users", usersResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to list users",
+          ERROR_CODES.QUERY_FAILED,
+          usersResult.error,
+        ),
+      );
     }
 
-    return usersResult;
+    return ok(usersResult.value);
   } catch (error) {
-    return err(new AdminUserManagementError("Unexpected error during user listing", error));
+    return err(
+      new AdminUserManagementError(
+        "Unexpected error during user listing",
+        ERROR_CODES.INTERNAL_ERROR,
+        error,
+      ),
+    );
   }
 }
 
@@ -107,7 +145,7 @@ export async function adminListUsers(
 export async function updateUserRole(
   context: Context,
   adminUserId: string,
-  input: UpdateUserRoleInput
+  input: UpdateUserRoleInput,
 ): Promise<Result<User, AdminUserManagementError>> {
   try {
     // Check admin permissions
@@ -118,13 +156,24 @@ export async function updateUserRole(
 
     // Prevent admin from changing their own role
     if (adminUserId === input.userId) {
-      return err(new AdminUserManagementError("Cannot change your own role", ERROR_CODES.CANNOT_MODIFY_SELF));
+      return err(
+        new AdminUserManagementError(
+          "Cannot change your own role",
+          ERROR_CODES.CANNOT_MODIFY_SELF,
+        ),
+      );
     }
 
     // Verify target user exists
     const userResult = await context.userRepository.findById(input.userId);
     if (userResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to find target user", userResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to find target user",
+          ERROR_CODES.QUERY_FAILED,
+          userResult.error,
+        ),
+      );
     }
 
     const user = userResult.value;
@@ -133,14 +182,29 @@ export async function updateUserRole(
     }
 
     // Update user role
-    const updateResult = await context.userRepository.updateRole(input.userId, input.role);
+    const updateResult = await context.userRepository.updateRole(
+      input.userId,
+      input.role,
+    );
     if (updateResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to update user role", updateResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to update user role",
+          ERROR_CODES.QUERY_FAILED,
+          updateResult.error,
+        ),
+      );
     }
 
-    return updateResult;
+    return ok(updateResult.value);
   } catch (error) {
-    return err(new AdminUserManagementError("Unexpected error during role update", error));
+    return err(
+      new AdminUserManagementError(
+        "Unexpected error during role update",
+        ERROR_CODES.INTERNAL_ERROR,
+        error,
+      ),
+    );
   }
 }
 
@@ -150,7 +214,7 @@ export async function updateUserRole(
 export async function updateUserStatus(
   context: Context,
   adminUserId: string,
-  input: UpdateUserStatusInput
+  input: UpdateUserStatusInput,
 ): Promise<Result<User, AdminUserManagementError>> {
   try {
     // Check admin permissions
@@ -167,7 +231,13 @@ export async function updateUserStatus(
     // Verify target user exists
     const userResult = await context.userRepository.findById(input.userId);
     if (userResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to find target user", userResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to find target user",
+          ERROR_CODES.QUERY_FAILED,
+          userResult.error,
+        ),
+      );
     }
 
     const user = userResult.value;
@@ -176,14 +246,29 @@ export async function updateUserStatus(
     }
 
     // Update user status
-    const updateResult = await context.userRepository.updateStatus(input.userId, input.status);
+    const updateResult = await context.userRepository.updateStatus(
+      input.userId,
+      input.status,
+    );
     if (updateResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to update user status", updateResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to update user status",
+          ERROR_CODES.QUERY_FAILED,
+          updateResult.error,
+        ),
+      );
     }
 
-    return updateResult;
+    return ok(updateResult.value);
   } catch (error) {
-    return err(new AdminUserManagementError("Unexpected error during status update", error));
+    return err(
+      new AdminUserManagementError(
+        "Unexpected error during status update",
+        ERROR_CODES.INTERNAL_ERROR,
+        error,
+      ),
+    );
   }
 }
 
@@ -194,7 +279,7 @@ export async function deleteUser(
   context: Context,
   adminUserId: string,
   targetUserId: string,
-  reason?: string
+  _reason?: string,
 ): Promise<Result<void, AdminUserManagementError>> {
   try {
     // Check admin permissions
@@ -205,13 +290,21 @@ export async function deleteUser(
 
     // Prevent admin from deleting their own account
     if (adminUserId === targetUserId) {
-      return err(new AdminUserManagementError("Cannot delete your own account"));
+      return err(
+        new AdminUserManagementError("Cannot delete your own account"),
+      );
     }
 
     // Verify target user exists
     const userResult = await context.userRepository.findById(targetUserId);
     if (userResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to find target user", userResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to find target user",
+          ERROR_CODES.QUERY_FAILED,
+          userResult.error,
+        ),
+      );
     }
 
     const user = userResult.value;
@@ -222,11 +315,23 @@ export async function deleteUser(
     // Delete user
     const deleteResult = await context.userRepository.delete(targetUserId);
     if (deleteResult.isErr()) {
-      return err(new AdminUserManagementError("Failed to delete user", deleteResult.error));
+      return err(
+        new AdminUserManagementError(
+          "Failed to delete user",
+          ERROR_CODES.QUERY_FAILED,
+          deleteResult.error,
+        ),
+      );
     }
 
-    return deleteResult;
+    return ok(deleteResult.value);
   } catch (error) {
-    return err(new AdminUserManagementError("Unexpected error during user deletion", error));
+    return err(
+      new AdminUserManagementError(
+        "Unexpected error during user deletion",
+        ERROR_CODES.INTERNAL_ERROR,
+        error,
+      ),
+    );
   }
 }

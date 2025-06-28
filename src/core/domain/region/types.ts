@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import { paginationSchema } from "@/lib/pagination";
-import { COORDINATE_SYSTEM, PLACE, LOCATION } from "./constants";
+import { COORDINATE_SYSTEM, LOCATION, PLACE } from "../constants";
 
 export const regionStatusSchema = z.enum(["draft", "published", "archived"]);
 export type RegionStatus = z.infer<typeof regionStatusSchema>;
@@ -9,8 +9,14 @@ export type RegionStatus = z.infer<typeof regionStatusSchema>;
  * Coordinates schema using WGS84 coordinate system
  */
 export const coordinatesSchema = z.object({
-  latitude: z.number().min(COORDINATE_SYSTEM.MIN_LATITUDE).max(COORDINATE_SYSTEM.MAX_LATITUDE),
-  longitude: z.number().min(COORDINATE_SYSTEM.MIN_LONGITUDE).max(COORDINATE_SYSTEM.MAX_LONGITUDE),
+  latitude: z
+    .number()
+    .min(COORDINATE_SYSTEM.MIN_LATITUDE)
+    .max(COORDINATE_SYSTEM.MAX_LATITUDE),
+  longitude: z
+    .number()
+    .min(COORDINATE_SYSTEM.MIN_LONGITUDE)
+    .max(COORDINATE_SYSTEM.MAX_LONGITUDE),
 });
 export type Coordinates = z.infer<typeof coordinatesSchema>;
 
@@ -18,7 +24,10 @@ export const regionSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH),
   description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
-  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z
+    .string()
+    .max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH)
+    .optional(),
   coordinates: coordinatesSchema.optional(),
   address: z.string().max(PLACE.MAX_ADDRESS_LENGTH).optional(),
   status: regionStatusSchema,
@@ -55,7 +64,10 @@ export type RegionPin = z.infer<typeof regionPinSchema>;
 export const createRegionSchema = z.object({
   name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH),
   description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
-  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z
+    .string()
+    .max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH)
+    .optional(),
   coordinates: coordinatesSchema.optional(),
   address: z.string().max(PLACE.MAX_ADDRESS_LENGTH).optional(),
   coverImage: z.string().url().optional(),
@@ -67,7 +79,10 @@ export type CreateRegionParams = z.infer<typeof createRegionSchema>;
 export const updateRegionSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
-  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z
+    .string()
+    .max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH)
+    .optional(),
   coordinates: coordinatesSchema.optional(),
   address: z.string().max(PLACE.MAX_ADDRESS_LENGTH).optional(),
   coverImage: z.string().url().optional(),

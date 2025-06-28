@@ -5,7 +5,7 @@ export class EmailServiceError extends AnyError {
   override readonly name = "EmailServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 

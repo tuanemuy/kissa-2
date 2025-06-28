@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { paginationSchema } from "@/lib/pagination";
+import { LOCATION, PLACE } from "../constants";
 import { coordinatesSchema } from "../region/types";
-import { PLACE, LOCATION } from "../constants";
 
 export const placeStatusSchema = z.enum(["draft", "published", "archived"]);
 export type PlaceStatus = z.infer<typeof placeStatusSchema>;
@@ -53,7 +53,10 @@ export const placeSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH),
   description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
-  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z
+    .string()
+    .max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH)
+    .optional(),
   category: placeCategorySchema,
   regionId: z.string().uuid(),
   coordinates: coordinatesSchema,
@@ -99,7 +102,10 @@ export type PlacePermission = z.infer<typeof placePermissionSchema>;
 export const createPlaceSchema = z.object({
   name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH),
   description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
-  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z
+    .string()
+    .max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH)
+    .optional(),
   category: placeCategorySchema,
   regionId: z.string().uuid(),
   coordinates: coordinatesSchema,
@@ -115,9 +121,16 @@ export const createPlaceSchema = z.object({
 export type CreatePlaceParams = z.infer<typeof createPlaceSchema>;
 
 export const updatePlaceSchema = z.object({
-  name: z.string().min(PLACE.MIN_NAME_LENGTH).max(PLACE.MAX_NAME_LENGTH).optional(),
+  name: z
+    .string()
+    .min(PLACE.MIN_NAME_LENGTH)
+    .max(PLACE.MAX_NAME_LENGTH)
+    .optional(),
   description: z.string().max(PLACE.MAX_DESCRIPTION_LENGTH).optional(),
-  shortDescription: z.string().max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH).optional(),
+  shortDescription: z
+    .string()
+    .max(PLACE.MAX_SHORT_DESCRIPTION_LENGTH)
+    .optional(),
   category: placeCategorySchema.optional(),
   coordinates: coordinatesSchema.optional(),
   address: z.string().max(PLACE.MAX_ADDRESS_LENGTH).optional(),
@@ -144,7 +157,10 @@ export const listPlacesQuerySchema = z.object({
       location: z
         .object({
           coordinates: coordinatesSchema,
-          radiusKm: z.number().min(LOCATION.MIN_SEARCH_RADIUS_KM).max(LOCATION.MAX_SEARCH_RADIUS_KM),
+          radiusKm: z
+            .number()
+            .min(LOCATION.MIN_SEARCH_RADIUS_KM)
+            .max(LOCATION.MAX_SEARCH_RADIUS_KM),
         })
         .optional(),
       hasPermission: z.boolean().optional(),

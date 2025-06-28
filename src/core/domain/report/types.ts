@@ -22,7 +22,7 @@ export type ReportType = z.infer<typeof reportTypeSchema>;
 export const reportEntityTypeSchema = z.enum([
   "user",
   "place",
-  "region", 
+  "region",
   "checkin",
 ]);
 export type ReportEntityType = z.infer<typeof reportEntityTypeSchema>;
@@ -86,12 +86,14 @@ export type ListReportsQuery = z.infer<typeof listReportsQuerySchema>;
 export const reportWithDetailsSchema = reportSchema.extend({
   reporterName: z.string(),
   reporterEmail: z.string().email(),
-  entityDetails: z.object({
-    name: z.string().optional(),
-    title: z.string().optional(),
-    content: z.string().optional(),
-    url: z.string().optional(),
-  }).optional(),
+  entityDetails: z
+    .object({
+      name: z.string().optional(),
+      title: z.string().optional(),
+      content: z.string().optional(),
+      url: z.string().optional(),
+    })
+    .optional(),
   reviewerName: z.string().optional(),
 });
 export type ReportWithDetails = z.infer<typeof reportWithDetailsSchema>;
@@ -104,9 +106,11 @@ export const reportStatsSchema = z.object({
   dismissedReports: z.number().int().min(0),
   reportsThisWeek: z.number().int().min(0),
   reportsThisMonth: z.number().int().min(0),
-  topReportTypes: z.array(z.object({
-    type: reportTypeSchema,
-    count: z.number().int().min(0),
-  })),
+  topReportTypes: z.array(
+    z.object({
+      type: reportTypeSchema,
+      count: z.number().int().min(0),
+    }),
+  ),
 });
 export type ReportStats = z.infer<typeof reportStatsSchema>;

@@ -1,45 +1,23 @@
-import { and, asc, count, desc, eq, like, sql } from "drizzle-orm";
+import { and, count, desc, eq, like } from "drizzle-orm";
 import { err, ok, type Result } from "neverthrow";
 import {
-  type EmailVerificationTokenRepository,
-  type NotificationSettingsRepository,
-  type PasswordResetTokenRepository,
   type UserRepository,
   UserRepositoryError,
-  type UserSessionRepository,
   type UserSubscriptionRepository,
 } from "@/core/domain/user/ports/userRepository";
 import type {
   CreateUserParams,
-  EmailVerificationToken,
   ListUsersQuery,
-  NotificationSettings,
-  PasswordResetToken,
   UpdateUserProfileParams,
   User,
   UserRole,
-  UserSession,
   UserStatus,
   UserSubscription,
 } from "@/core/domain/user/types";
-import {
-  emailVerificationTokenSchema,
-  notificationSettingsSchema,
-  passwordResetTokenSchema,
-  userSchema,
-  userSessionSchema,
-  userSubscriptionSchema,
-} from "@/core/domain/user/types";
+import { userSchema, userSubscriptionSchema } from "@/core/domain/user/types";
 import { validate } from "@/lib/validation";
 import type { Database } from "./client";
-import {
-  emailVerificationTokens,
-  notificationSettings,
-  passwordResetTokens,
-  userSessions,
-  userSubscriptions,
-  users,
-} from "./schema";
+import { userSubscriptions, users } from "./schema";
 
 export class DrizzlePgliteUserRepository implements UserRepository {
   constructor(private readonly db: Database) {}
@@ -65,10 +43,12 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
-      return err(new UserRepositoryError("Failed to create user", error));
+      return err(
+        new UserRepositoryError("Failed to create user", undefined, error),
+      );
     }
   }
 
@@ -87,10 +67,12 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, result[0]).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
-      return err(new UserRepositoryError("Failed to find user by ID", error));
+      return err(
+        new UserRepositoryError("Failed to find user by ID", undefined, error),
+      );
     }
   }
 
@@ -109,11 +91,15 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, result[0]).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to find user by email", error),
+        new UserRepositoryError(
+          "Failed to find user by email",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -140,11 +126,15 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to update user profile", error),
+        new UserRepositoryError(
+          "Failed to update user profile",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -166,11 +156,15 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to update user password", error),
+        new UserRepositoryError(
+          "Failed to update user password",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -192,10 +186,12 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
-      return err(new UserRepositoryError("Failed to update user role", error));
+      return err(
+        new UserRepositoryError("Failed to update user role", undefined, error),
+      );
     }
   }
 
@@ -216,11 +212,15 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to update user status", error),
+        new UserRepositoryError(
+          "Failed to update user status",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -242,10 +242,16 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
-      return err(new UserRepositoryError("Failed to verify user email", error));
+      return err(
+        new UserRepositoryError(
+          "Failed to verify user email",
+          undefined,
+          error,
+        ),
+      );
     }
   }
 
@@ -265,10 +271,16 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       }
 
       return validate(userSchema, user).mapErr((error) => {
-        return new UserRepositoryError("Invalid user data", error);
+        return new UserRepositoryError("Invalid user data", undefined, error);
       });
     } catch (error) {
-      return err(new UserRepositoryError("Failed to update last login", error));
+      return err(
+        new UserRepositoryError(
+          "Failed to update last login",
+          undefined,
+          error,
+        ),
+      );
     }
   }
 
@@ -309,7 +321,9 @@ export class DrizzlePgliteUserRepository implements UserRepository {
         count: Number(countResult[0]?.count || 0),
       });
     } catch (error) {
-      return err(new UserRepositoryError("Failed to list users", error));
+      return err(
+        new UserRepositoryError("Failed to list users", undefined, error),
+      );
     }
   }
 
@@ -319,7 +333,9 @@ export class DrizzlePgliteUserRepository implements UserRepository {
 
       return ok(undefined);
     } catch (error) {
-      return err(new UserRepositoryError("Failed to delete user", error));
+      return err(
+        new UserRepositoryError("Failed to delete user", undefined, error),
+      );
     }
   }
 
@@ -336,13 +352,19 @@ export class DrizzlePgliteUserRepository implements UserRepository {
       return ok(userCount === 0);
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to check email availability", error),
+        new UserRepositoryError(
+          "Failed to check email availability",
+          undefined,
+          error,
+        ),
       );
     }
   }
 }
 
-export class DrizzlePgliteUserSubscriptionRepository implements UserSubscriptionRepository {
+export class DrizzlePgliteUserSubscriptionRepository
+  implements UserSubscriptionRepository
+{
   constructor(private readonly db: Database) {}
 
   async create(
@@ -368,12 +390,20 @@ export class DrizzlePgliteUserSubscriptionRepository implements UserSubscription
 
       return validate(userSubscriptionSchema, userSubscription).mapErr(
         (error) => {
-          return new UserRepositoryError("Invalid subscription data", error);
+          return new UserRepositoryError(
+            "Invalid subscription data",
+            undefined,
+            error,
+          );
         },
       );
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to create user subscription", error),
+        new UserRepositoryError(
+          "Failed to create user subscription",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -394,11 +424,19 @@ export class DrizzlePgliteUserSubscriptionRepository implements UserSubscription
       }
 
       return validate(userSubscriptionSchema, subscription).mapErr((error) => {
-        return new UserRepositoryError("Invalid subscription data", error);
+        return new UserRepositoryError(
+          "Invalid subscription data",
+          undefined,
+          error,
+        );
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to find user subscription", error),
+        new UserRepositoryError(
+          "Failed to find user subscription",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -429,11 +467,19 @@ export class DrizzlePgliteUserSubscriptionRepository implements UserSubscription
       }
 
       return validate(userSubscriptionSchema, subscription).mapErr((error) => {
-        return new UserRepositoryError("Invalid subscription data", error);
+        return new UserRepositoryError(
+          "Invalid subscription data",
+          undefined,
+          error,
+        );
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to update user subscription", error),
+        new UserRepositoryError(
+          "Failed to update user subscription",
+          undefined,
+          error,
+        ),
       );
     }
   }
@@ -456,11 +502,19 @@ export class DrizzlePgliteUserSubscriptionRepository implements UserSubscription
       }
 
       return validate(userSubscriptionSchema, subscription).mapErr((error) => {
-        return new UserRepositoryError("Invalid subscription data", error);
+        return new UserRepositoryError(
+          "Invalid subscription data",
+          undefined,
+          error,
+        );
       });
     } catch (error) {
       return err(
-        new UserRepositoryError("Failed to cancel user subscription", error),
+        new UserRepositoryError(
+          "Failed to cancel user subscription",
+          undefined,
+          error,
+        ),
       );
     }
   }

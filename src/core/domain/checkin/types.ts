@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { paginationSchema } from "@/lib/pagination";
-import { coordinatesSchema } from "../region/types";
 import { CHECKIN, LOCATION } from "../constants";
+import { coordinatesSchema } from "../region/types";
 
 export const checkinStatusSchema = z.enum([
   "active",
@@ -16,7 +16,12 @@ export const checkinSchema = z.object({
   userId: z.string().uuid(),
   placeId: z.string().uuid(),
   comment: z.string().max(CHECKIN.MAX_COMMENT_LENGTH).optional(),
-  rating: z.number().int().min(CHECKIN.MIN_RATING).max(CHECKIN.MAX_RATING).optional(),
+  rating: z
+    .number()
+    .int()
+    .min(CHECKIN.MIN_RATING)
+    .max(CHECKIN.MAX_RATING)
+    .optional(),
   photos: z.array(z.string().url()).default([]),
   userLocation: coordinatesSchema.optional(),
   status: checkinStatusSchema.default("active"),
@@ -39,7 +44,12 @@ export type CheckinPhoto = z.infer<typeof checkinPhotoSchema>;
 export const createCheckinSchema = z.object({
   placeId: z.string().uuid(),
   comment: z.string().max(CHECKIN.MAX_COMMENT_LENGTH).optional(),
-  rating: z.number().int().min(CHECKIN.MIN_RATING).max(CHECKIN.MAX_RATING).optional(),
+  rating: z
+    .number()
+    .int()
+    .min(CHECKIN.MIN_RATING)
+    .max(CHECKIN.MAX_RATING)
+    .optional(),
   userLocation: coordinatesSchema,
   isPrivate: z.boolean().default(false),
 });
@@ -47,7 +57,12 @@ export type CreateCheckinParams = z.infer<typeof createCheckinSchema>;
 
 export const updateCheckinSchema = z.object({
   comment: z.string().max(CHECKIN.MAX_COMMENT_LENGTH).optional(),
-  rating: z.number().int().min(CHECKIN.MIN_RATING).max(CHECKIN.MAX_RATING).optional(),
+  rating: z
+    .number()
+    .int()
+    .min(CHECKIN.MIN_RATING)
+    .max(CHECKIN.MAX_RATING)
+    .optional(),
   isPrivate: z.boolean().optional(),
 });
 export type UpdateCheckinParams = z.infer<typeof updateCheckinSchema>;
@@ -96,7 +111,12 @@ export type ListCheckinsQuery = z.infer<typeof listCheckinsQuerySchema>;
 export const validateLocationSchema = z.object({
   userLocation: coordinatesSchema,
   placeLocation: coordinatesSchema,
-  maxDistanceMeters: z.number().int().min(1).max(LOCATION.MAX_CHECKIN_DISTANCE_METERS).default(LOCATION.DEFAULT_CHECKIN_DISTANCE_METERS),
+  maxDistanceMeters: z
+    .number()
+    .int()
+    .min(1)
+    .max(LOCATION.MAX_CHECKIN_DISTANCE_METERS)
+    .default(LOCATION.DEFAULT_CHECKIN_DISTANCE_METERS),
 });
 export type ValidateLocationParams = z.infer<typeof validateLocationSchema>;
 

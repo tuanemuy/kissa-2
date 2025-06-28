@@ -3,7 +3,6 @@ import {
   type EmailService,
   EmailServiceError,
 } from "@/core/domain/user/ports/emailService";
-import { ERROR_CODES } from "@/lib/errorCodes";
 
 export interface SMTPConfig {
   host: string;
@@ -34,21 +33,25 @@ export class SMTPEmailService implements EmailService {
   async sendVerificationEmail(
     email: string,
     name: string,
-    verificationToken: string
+    verificationToken: string,
   ): Promise<Result<void, EmailServiceError>> {
     try {
       const verificationUrl = `${this.config.baseUrl}/auth/verify-email?token=${verificationToken}`;
-      
-      const template = this.createVerificationEmailTemplate(name, verificationUrl);
-      
-      return await this.sendEmail(email, template.subject, template.html, template.text);
+
+      const template = this.createVerificationEmailTemplate(
+        name,
+        verificationUrl,
+      );
+
+      return await this.sendEmail(
+        email,
+        template.subject,
+        template.html,
+        template.text,
+      );
     } catch (error) {
       return err(
-        new EmailServiceError(
-          "Failed to send verification email",
-          ERROR_CODES.EMAIL_SERVICE_FAILED,
-          error
-        )
+        new EmailServiceError("Failed to send verification email", error),
       );
     }
   }
@@ -56,21 +59,22 @@ export class SMTPEmailService implements EmailService {
   async sendPasswordResetEmail(
     email: string,
     name: string,
-    resetToken: string
+    resetToken: string,
   ): Promise<Result<void, EmailServiceError>> {
     try {
       const resetUrl = `${this.config.baseUrl}/auth/reset-password?token=${resetToken}`;
-      
+
       const template = this.createPasswordResetEmailTemplate(name, resetUrl);
-      
-      return await this.sendEmail(email, template.subject, template.html, template.text);
+
+      return await this.sendEmail(
+        email,
+        template.subject,
+        template.html,
+        template.text,
+      );
     } catch (error) {
       return err(
-        new EmailServiceError(
-          "Failed to send password reset email",
-          ERROR_CODES.EMAIL_SERVICE_FAILED,
-          error
-        )
+        new EmailServiceError("Failed to send password reset email", error),
       );
     }
   }
@@ -79,45 +83,45 @@ export class SMTPEmailService implements EmailService {
     email: string,
     inviterName: string,
     placeName: string,
-    invitationToken: string
+    invitationToken: string,
   ): Promise<Result<void, EmailServiceError>> {
     try {
       const invitationUrl = `${this.config.baseUrl}/places/invitation?token=${invitationToken}`;
-      
+
       const template = this.createEditorInvitationEmailTemplate(
         inviterName,
         placeName,
-        invitationUrl
+        invitationUrl,
       );
-      
-      return await this.sendEmail(email, template.subject, template.html, template.text);
+
+      return await this.sendEmail(
+        email,
+        template.subject,
+        template.html,
+        template.text,
+      );
     } catch (error) {
       return err(
-        new EmailServiceError(
-          "Failed to send editor invitation email",
-          ERROR_CODES.EMAIL_SERVICE_FAILED,
-          error
-        )
+        new EmailServiceError("Failed to send editor invitation email", error),
       );
     }
   }
 
   async sendWelcomeEmail(
     email: string,
-    name: string
+    name: string,
   ): Promise<Result<void, EmailServiceError>> {
     try {
       const template = this.createWelcomeEmailTemplate(name);
-      
-      return await this.sendEmail(email, template.subject, template.html, template.text);
-    } catch (error) {
-      return err(
-        new EmailServiceError(
-          "Failed to send welcome email",
-          ERROR_CODES.EMAIL_SERVICE_FAILED,
-          error
-        )
+
+      return await this.sendEmail(
+        email,
+        template.subject,
+        template.html,
+        template.text,
       );
+    } catch (error) {
+      return err(new EmailServiceError("Failed to send welcome email", error));
     }
   }
 
@@ -125,12 +129,12 @@ export class SMTPEmailService implements EmailService {
     to: string,
     subject: string,
     html: string,
-    text: string
+    text: string,
   ): Promise<Result<void, EmailServiceError>> {
     try {
       // In a real implementation, you would use nodemailer or similar
       // This is a placeholder that would be replaced with actual SMTP sending logic
-      
+
       const emailData = {
         from: `${this.config.fromName} <${this.config.fromEmail}>`,
         to,
@@ -142,24 +146,21 @@ export class SMTPEmailService implements EmailService {
       // Placeholder for actual email sending
       // const transporter = nodemailer.createTransporter(this.config);
       // await transporter.sendMail(emailData);
-      
+
       console.log("📧 Would send email:", emailData);
-      
+
       return ok(undefined);
     } catch (error) {
-      return err(
-        new EmailServiceError(
-          "SMTP send failed",
-          ERROR_CODES.EMAIL_SERVICE_FAILED,
-          error
-        )
-      );
+      return err(new EmailServiceError("SMTP send failed", error));
     }
   }
 
-  private createVerificationEmailTemplate(name: string, verificationUrl: string): EmailTemplate {
+  private createVerificationEmailTemplate(
+    name: string,
+    verificationUrl: string,
+  ): EmailTemplate {
     const subject = "Verify your email address";
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -207,9 +208,12 @@ The Kissa Team
     return { subject, html, text };
   }
 
-  private createPasswordResetEmailTemplate(name: string, resetUrl: string): EmailTemplate {
+  private createPasswordResetEmailTemplate(
+    name: string,
+    resetUrl: string,
+  ): EmailTemplate {
     const subject = "Reset your password";
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -260,10 +264,10 @@ The Kissa Team
   private createEditorInvitationEmailTemplate(
     inviterName: string,
     placeName: string,
-    invitationUrl: string
+    invitationUrl: string,
   ): EmailTemplate {
     const subject = `You've been invited to edit "${placeName}"`;
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -324,7 +328,7 @@ The Kissa Team
 
   private createWelcomeEmailTemplate(name: string): EmailTemplate {
     const subject = "Welcome to Kissa!";
-    
+
     const html = `
       <!DOCTYPE html>
       <html>

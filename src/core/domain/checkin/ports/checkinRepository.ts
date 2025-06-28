@@ -10,14 +10,13 @@ import type {
   ListCheckinsQuery,
   UpdateCheckinParams,
   UploadCheckinPhotosParams,
-  ValidateLocationParams,
 } from "../types";
 
 export class CheckinRepositoryError extends AnyError {
   override readonly name = "CheckinRepositoryError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 

@@ -7,7 +7,7 @@ export class LocationServiceError extends AnyError {
   override readonly name = "LocationServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 
