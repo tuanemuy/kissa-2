@@ -100,21 +100,48 @@ export async function deletePlace(
       );
     }
 
-    // Delete the place
-    const deleteResult = await context.placeRepository.delete(placeId);
+    // Execute place deletion and region count update in a transaction
+    const transactionResult = await context.withTransaction(
+      async (txContext) => {
+        // Delete the place
+        const deleteResult = await txContext.placeRepository.delete(placeId);
 
-    if (deleteResult.isErr()) {
+        if (deleteResult.isErr()) {
+          return err(
+            new DeletePlaceError(
+              "Failed to delete place",
+              ERROR_CODES.PLACE_DELETE_FAILED,
+              deleteResult.error,
+            ),
+          );
+        }
+
+        // Update region place count
+        const updateCountResult =
+          await txContext.regionRepository.updatePlaceCount(place.regionId);
+        if (updateCountResult.isErr()) {
+          return err(
+            new DeletePlaceError(
+              "Failed to update region place count",
+              ERROR_CODES.INTERNAL_ERROR,
+              updateCountResult.error,
+            ),
+          );
+        }
+
+        return ok(undefined);
+      },
+    );
+
+    if (transactionResult.isErr()) {
       return err(
         new DeletePlaceError(
-          "Failed to delete place",
-          ERROR_CODES.PLACE_DELETE_FAILED,
-          deleteResult.error,
+          "Transaction failed during place deletion",
+          ERROR_CODES.TRANSACTION_FAILED,
+          transactionResult.error,
         ),
       );
     }
-
-    // Update region place count
-    await context.regionRepository.updatePlaceCount(place.regionId);
 
     return ok(undefined);
   } catch (error) {

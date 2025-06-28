@@ -143,47 +143,65 @@ export async function createPlace(
       );
     }
 
-    // Create place
-    const placeResult = await context.placeRepository.create(userId, {
-      name: input.name,
-      description: input.description,
-      shortDescription: input.shortDescription,
-      category: input.category,
-      regionId: input.regionId,
-      coordinates: input.coordinates,
-      address: input.address,
-      phone: input.phone,
-      website: input.website,
-      email: input.email,
-      coverImage: input.coverImage,
-      images: input.images,
-      tags: input.tags,
-      businessHours: input.businessHours,
-    });
+    // Execute place creation and region count update in a transaction
+    const transactionResult = await context.withTransaction(
+      async (txContext) => {
+        // Create place
+        const placeResult = await txContext.placeRepository.create(userId, {
+          name: input.name,
+          description: input.description,
+          shortDescription: input.shortDescription,
+          category: input.category,
+          regionId: input.regionId,
+          coordinates: input.coordinates,
+          address: input.address,
+          phone: input.phone,
+          website: input.website,
+          email: input.email,
+          coverImage: input.coverImage,
+          images: input.images,
+          tags: input.tags,
+          businessHours: input.businessHours,
+        });
 
-    if (placeResult.isErr()) {
+        if (placeResult.isErr()) {
+          return err(
+            new CreatePlaceError(
+              "Failed to create place",
+              ERROR_CODES.INTERNAL_ERROR,
+              placeResult.error,
+            ),
+          );
+        }
+
+        // Update region place count
+        const updateCountResult =
+          await txContext.regionRepository.updatePlaceCount(input.regionId);
+        if (updateCountResult.isErr()) {
+          return err(
+            new CreatePlaceError(
+              "Failed to update region place count",
+              ERROR_CODES.INTERNAL_ERROR,
+              updateCountResult.error,
+            ),
+          );
+        }
+
+        return ok(placeResult.value);
+      },
+    );
+
+    if (transactionResult.isErr()) {
       return err(
         new CreatePlaceError(
-          "Failed to create place",
-          ERROR_CODES.INTERNAL_ERROR,
-          placeResult.error,
+          "Transaction failed during place creation",
+          ERROR_CODES.TRANSACTION_FAILED,
+          transactionResult.error,
         ),
       );
     }
 
-    // Update region place count
-    const updateCountResult = await context.regionRepository.updatePlaceCount(
-      input.regionId,
-    );
-    if (updateCountResult.isErr()) {
-      // Log error but don't fail place creation
-      console.error(
-        "Failed to update region place count:",
-        updateCountResult.error,
-      );
-    }
-
-    return ok(placeResult.value);
+    return ok(transactionResult.value);
   } catch (error) {
     return err(
       new CreatePlaceError(

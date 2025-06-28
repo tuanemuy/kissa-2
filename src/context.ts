@@ -4,23 +4,22 @@ import {
   getDatabase,
   withTransaction,
 } from "@/core/adapters/drizzlePglite/client";
-import { DrizzlePglitePlacePermissionRepository } from "@/core/adapters/drizzlePglite/placeRepository";
+import {
+  DrizzlePgliteCheckinRepository,
+  DrizzlePgliteCheckinPhotoRepository,
+} from "@/core/adapters/drizzlePglite/checkinRepository";
+import {
+  DrizzlePglitePlaceRepository,
+  DrizzlePglitePlacePermissionRepository,
+} from "@/core/adapters/drizzlePglite/placeRepository";
+import { DrizzlePgliteRegionRepository } from "@/core/adapters/drizzlePglite/regionRepository";
 import {
   DrizzlePgliteUserRepository,
   DrizzlePgliteUserSubscriptionRepository,
 } from "@/core/adapters/drizzlePglite/userRepository";
 import { ConsoleEmailService } from "@/core/adapters/email/consoleEmailService";
 import type { Context } from "@/core/application/context";
-import type {
-  CheckinPhotoRepository,
-  CheckinRepository,
-} from "@/core/domain/checkin/ports/checkinRepository";
 import type { LocationService } from "@/core/domain/checkin/ports/locationService";
-import type {
-  PlacePermissionRepository,
-  PlaceRepository,
-} from "@/core/domain/place/ports/placeRepository";
-import type { RegionRepository } from "@/core/domain/region/ports/regionRepository";
 import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
 import type {
   PasswordHasher,
@@ -54,9 +53,13 @@ const userRepository = new DrizzlePgliteUserRepository(db);
 const userSubscriptionRepository = new DrizzlePgliteUserSubscriptionRepository(
   db,
 );
+const regionRepository = new DrizzlePgliteRegionRepository(db);
+const placeRepository = new DrizzlePglitePlaceRepository(db);
 const placePermissionRepository = new DrizzlePglitePlacePermissionRepository(
   db,
 );
+const checkinRepository = new DrizzlePgliteCheckinRepository(db);
+const checkinPhotoRepository = new DrizzlePgliteCheckinPhotoRepository(db);
 
 // Create email service
 const emailService = new ConsoleEmailService({
@@ -97,15 +100,15 @@ export const context: Context = {
   emailService,
 
   // Region repositories
-  regionRepository: createRepositoryStub() as RegionRepository,
+  regionRepository,
 
   // Place repositories
-  placeRepository: createRepositoryStub() as PlaceRepository,
+  placeRepository,
   placePermissionRepository,
 
   // Checkin repositories and services
-  checkinRepository: createRepositoryStub() as CheckinRepository,
-  checkinPhotoRepository: createRepositoryStub() as CheckinPhotoRepository,
+  checkinRepository,
+  checkinPhotoRepository,
   locationService: createRepositoryStub() as LocationService,
 
   // Report repository

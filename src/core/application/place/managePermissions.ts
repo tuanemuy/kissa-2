@@ -6,7 +6,6 @@ import type {
   PlaceWithStats,
   UpdatePermissionParams,
 } from "@/core/domain/place/types";
-import type { User } from "@/core/domain/user/types";
 import { AnyError } from "@/lib/error";
 import { ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";

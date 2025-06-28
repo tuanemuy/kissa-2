@@ -56,67 +56,94 @@ export async function registerUser(
       );
     }
 
-    // Create user
-    const createResult = await context.userRepository.create({
-      email: input.email,
-      password: hashedPasswordResult.value,
-      name: input.name,
-      bio: input.bio,
-      avatar: input.avatar,
-    });
+    // Execute user creation and related data in a transaction
+    const transactionResult = await context.withTransaction(
+      async (txContext) => {
+        // Create user
+        const createResult = await txContext.userRepository.create({
+          email: input.email,
+          password: hashedPasswordResult.value,
+          name: input.name,
+          bio: input.bio,
+          avatar: input.avatar,
+        });
 
-    if (createResult.isErr()) {
+        if (createResult.isErr()) {
+          return err(
+            new RegisterUserError("Failed to create user", createResult.error),
+          );
+        }
+
+        const user = createResult.value;
+
+        // Create default notification settings
+        const notificationResult =
+          await txContext.notificationSettingsRepository.create({
+            userId: user.id,
+            emailNotifications: true,
+            checkinNotifications: true,
+            editorInviteNotifications: true,
+            systemNotifications: true,
+          });
+
+        if (notificationResult.isErr()) {
+          return err(
+            new RegisterUserError(
+              "Failed to create notification settings",
+              notificationResult.error,
+            ),
+          );
+        }
+
+        // Generate email verification token
+        const tokenResult =
+          await context.tokenGenerator.generateEmailVerificationToken();
+        if (tokenResult.isOk()) {
+          const verificationTokenResult =
+            await txContext.emailVerificationTokenRepository.create({
+              userId: user.id,
+              token: tokenResult.value,
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+            });
+
+          if (verificationTokenResult.isErr()) {
+            return err(
+              new RegisterUserError(
+                "Failed to create email verification token",
+                verificationTokenResult.error,
+              ),
+            );
+          }
+        }
+
+        return ok(user);
+      },
+    );
+
+    if (transactionResult.isErr()) {
       return err(
-        new RegisterUserError("Failed to create user", createResult.error),
+        new RegisterUserError(
+          "Transaction failed during user registration",
+          transactionResult.error,
+        ),
       );
     }
 
-    const user = createResult.value;
+    const user = transactionResult.value;
 
-    // Create default notification settings
-    const notificationResult =
-      await context.notificationSettingsRepository.create({
-        userId: user.id,
-        emailNotifications: true,
-        checkinNotifications: true,
-        editorInviteNotifications: true,
-        systemNotifications: true,
-      });
-
-    if (notificationResult.isErr()) {
-      // Log error but don't fail registration
-      console.error(
-        "Failed to create notification settings:",
-        notificationResult.error,
-      );
-    }
-
-    // Generate email verification token
+    // Send verification email (outside transaction since it's external service)
     const tokenResult =
       await context.tokenGenerator.generateEmailVerificationToken();
     if (tokenResult.isOk()) {
-      const verificationTokenResult =
-        await context.emailVerificationTokenRepository.create({
-          userId: user.id,
-          token: tokenResult.value,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-        });
+      const emailResult = await context.emailService.sendVerificationEmail(
+        user.email,
+        user.name,
+        tokenResult.value,
+      );
 
-      if (verificationTokenResult.isOk()) {
-        // Send verification email
-        const emailResult = await context.emailService.sendVerificationEmail(
-          user.email,
-          user.name,
-          tokenResult.value,
-        );
-
-        if (emailResult.isErr()) {
-          // Log error but don't fail registration
-          console.error(
-            "Failed to send verification email:",
-            emailResult.error,
-          );
-        }
+      if (emailResult.isErr()) {
+        // Log error but don't fail registration
+        console.error("Failed to send verification email:", emailResult.error);
       }
     }
 
