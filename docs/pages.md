@@ -55,9 +55,9 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: アプリケーションの紹介とメイン機能へのエントリーポイント
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-014: 地域一覧の表示
-  - REQ-015: 地域のキーワード検索
-  - REQ-016: 位置情報による地域検索
+  - `getFeaturedRegions`: 注目地域一覧を取得する
+  - `searchRegionsByKeyword`: キーワードで地域を検索する
+  - `searchRegionsByLocation`: 位置情報で地域を検索する
 - **コンポーネント**:
   - `HeroSection`: メインビジュアル・CTA
   - `RegionList`: 人気地域一覧
@@ -70,9 +70,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 公開されている全地域の一覧・検索・フィルタリング
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-014: 地域の一覧表示（ページネーション付き）
-  - REQ-015: キーワード検索
-  - REQ-016: 位置情報検索
+  - `getPublicRegions`: 公開地域一覧を取得する（ページネーション付き）
+  - `searchRegionsByKeyword`: キーワードで地域を検索する
+  - `searchRegionsByLocation`: 位置情報で地域を検索する
+  - `filterRegions`: 地域をフィルタリングする
 - **コンポーネント**:
   - `RegionGrid`: 地域カード一覧
   - `SearchFilters`: 検索・フィルター
@@ -85,9 +86,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 特定地域の詳細情報と所属場所の表示
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-019: 地域内施設一覧表示
-  - REQ-020: 地図上での施設表示
-  - REQ-041: 地域内場所検索
+  - `getRegionById`: 地域詳細情報を取得する
+  - `getPlacesByRegion`: 地域内の場所一覧を取得する
+  - `getPlaceLocationsForMap`: 地図表示用の場所位置情報を取得する
+  - `searchPlacesInRegion`: 地域内の場所を検索する
 - **コンポーネント**:
   - `RegionHeader`: 地域基本情報
   - `PlaceMap`: 地図表示
@@ -100,8 +102,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 特定場所の詳細情報・チェックイン・レビュー表示
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-021: 施設詳細情報表示
-  - チェックイン・レビューの表示（認証不要で閲覧）
+  - `getPlaceById`: 場所詳細情報を取得する
+  - `getPlacePhotos`: 場所の写真一覧を取得する
+  - `getCheckinsForPlace`: 場所のチェックイン一覧を取得する
+  - `getPlaceBusinessHours`: 営業時間情報を取得する
 - **コンポーネント**:
   - `PlaceHeader`: 場所基本情報
   - `PlaceDetails`: 詳細情報（営業時間・連絡先等）
@@ -116,7 +120,9 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: ユーザーログイン
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-035: ログイン機能
+  - `authenticateUser`: ユーザーを認証する
+  - `createUserSession`: ユーザーセッションを作成する
+  - `validateLoginCredentials`: ログイン認証情報を検証する
 - **コンポーネント**:
   - `LoginForm`: ログインフォーム
   - `SocialLogin`: ソーシャルログインボタン
@@ -127,7 +133,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 新規ユーザー登録
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-034: ユーザー登録（メール認証含む）
+  - `registerUser`: ユーザーを登録する
+  - `sendVerificationEmail`: 認証メールを送信する
+  - `validateUserRegistrationData`: 登録データを検証する
+  - `checkEmailAvailability`: メールアドレスの利用可能性を確認する
 - **コンポーネント**:
   - `RegisterForm`: 登録フォーム
   - `EmailVerification`: メール認証案内
@@ -138,7 +147,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: パスワードリセット機能
 - **レイアウト**: PublicLayout
 - **ユースケース**:
-  - REQ-036: パスワードリセット
+  - `requestPasswordReset`: パスワードリセットを要求する
+  - `sendPasswordResetEmail`: パスワードリセットメールを送信する
+  - `validateResetToken`: リセットトークンを検証する
+  - `resetUserPassword`: ユーザーパスワードをリセットする
 - **コンポーネント**:
   - `PasswordResetForm`: リセットフォーム
   - `ResetEmailSent`: 送信完了メッセージ
@@ -150,9 +162,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 来訪者向けメインダッシュボード
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - お気に入り地域・場所の概要表示
-  - 最近のチェックイン表示
-  - おすすめ地域表示
+  - `getUserPinnedRegions`: ユーザーのピン留め地域を取得する
+  - `getUserRecentCheckins`: ユーザーの最近のチェックインを取得する
+  - `getUserFavoritesSummary`: ユーザーのお気に入りサマリーを取得する
+  - `getRecommendedRegions`: おすすめ地域を取得する
 - **コンポーネント**:
   - `PinnedRegions`: ピン留め地域
   - `RecentCheckins`: 最近のチェックイン
@@ -164,8 +177,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: お気に入り地域・場所の一覧管理
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-037: お気に入り地域の管理
-  - REQ-038: お気に入り施設の管理
+  - `getUserFavoriteRegions`: ユーザーのお気に入り地域一覧を取得する
+  - `getUserFavoritePlaces`: ユーザーのお気に入り場所一覧を取得する
+  - `removeFavoriteRegion`: お気に入り地域を削除する
+  - `removeFavoritePlace`: お気に入り場所を削除する
 - **コンポーネント**:
   - `FavoriteTabs`: タブ切り替え（地域・場所）
   - `FavoriteRegionList`: お気に入り地域一覧
@@ -177,7 +192,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: ピン留め地域の管理・並び替え
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-039: ピン留め地域の管理・並び替え
+  - `getUserPinnedRegions`: ユーザーのピン留め地域一覧を取得する
+  - `reorderPinnedRegions`: ピン留め地域の順序を変更する
+  - `unpinRegion`: 地域のピン留めを解除する
+  - `updatePinDisplayOrder`: ピン表示順序を更新する
 - **コンポーネント**:
   - `PinnedRegionList`: ドラッグ&ドロップ対応一覧
   - `ReorderControls`: 並び替えコントロール
@@ -188,8 +206,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 自分のチェックイン履歴の表示・管理
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - チェックイン履歴の表示
-  - チェックイン内容の編集・削除
+  - `getUserCheckins`: ユーザーのチェックイン履歴を取得する
+  - `updateCheckin`: チェックイン内容を更新する
+  - `deleteCheckin`: チェックインを削除する
+  - `getCheckinPhotos`: チェックインの写真を取得する
 - **コンポーネント**:
   - `CheckinHistory`: チェックイン履歴一覧
   - `CheckinCard`: 個別チェックイン表示
@@ -200,7 +220,11 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: プロフィール・通知・プライバシー設定
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-026: アカウント設定
+  - `getUserProfile`: ユーザープロフィールを取得する
+  - `updateUserProfile`: ユーザープロフィールを更新する
+  - `updateNotificationSettings`: 通知設定を更新する
+  - `updatePrivacySettings`: プライバシー設定を更新する
+  - `changeUserPassword`: ユーザーパスワードを変更する
 - **コンポーネント**:
   - `ProfileForm`: プロフィール編集
   - `NotificationSettings`: 通知設定
@@ -214,9 +238,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 編集者向けメインダッシュボード
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - 自分の地域・場所の概要表示
-  - 最近の編集活動表示
-  - サブスクリプション状況表示
+  - `getEditorStats`: 編集者の統計情報を取得する
+  - `getEditorRecentActivities`: 編集者の最近の活動を取得する
+  - `getUserSubscriptionStatus`: ユーザーのサブスクリプション状況を取得する
+  - `getEditorOwnedRegions`: 編集者が所有する地域一覧を取得する
 - **コンポーネント**:
   - `EditorStats`: 編集統計
   - `RecentEdits`: 最近の編集
@@ -228,7 +253,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 自分が作成した地域の一覧・管理
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-004: 地域の一覧表示
+  - `getEditorRegions`: 編集者が作成した地域一覧を取得する
+  - `deleteRegion`: 地域を削除する
+  - `updateRegionStatus`: 地域の公開状態を更新する
+  - `getRegionStatistics`: 地域の統計情報を取得する
 - **コンポーネント**:
   - `RegionManagementList`: 地域管理一覧
   - `CreateRegionButton`: 新規作成ボタン
@@ -240,8 +268,11 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 地域の新規作成・編集
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-001: 地域の作成
-  - REQ-002: 地域の編集
+  - `createRegion`: 地域を作成する
+  - `updateRegion`: 地域情報を更新する
+  - `validateRegionData`: 地域データを検証する
+  - `uploadRegionImages`: 地域画像をアップロードする
+  - `getRegionById`: 編集対象の地域情報を取得する
 - **コンポーネント**:
   - `RegionForm`: 地域情報フォーム
   - `LocationPicker`: 位置情報選択
@@ -253,7 +284,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 自分が作成・編集権限を持つ場所の一覧・管理
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-008: 場所の一覧表示
+  - `getEditorPlaces`: 編集者が管理する場所一覧を取得する
+  - `deletePlace`: 場所を削除する
+  - `getPlacePermissions`: 場所の編集権限を取得する
+  - `updatePlaceStatus`: 場所の公開状態を更新する
 - **コンポーネント**:
   - `PlaceManagementList`: 場所管理一覧
   - `CreatePlaceButton`: 新規作成ボタン
@@ -265,8 +299,11 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 場所の新規作成・編集
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-005: 場所の作成
-  - REQ-006: 場所の編集
+  - `createPlace`: 場所を作成する
+  - `updatePlace`: 場所情報を更新する
+  - `validatePlaceData`: 場所データを検証する
+  - `getEditorRegions`: 編集者の地域一覧を取得する
+  - `uploadPlaceImages`: 場所画像をアップロードする
 - **コンポーネント**:
   - `PlaceForm`: 場所情報フォーム
   - `RegionSelector`: 所属地域選択
@@ -278,9 +315,12 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 編集者招待・権限管理
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-009: 編集者の招待
-  - REQ-010: 編集者の権限管理
-  - REQ-011: 編集権限のある場所の管理
+  - `inviteEditor`: 編集者を招待する
+  - `sendEditorInvitation`: 編集者招待メールを送信する
+  - `getPlacePermissions`: 場所の権限一覧を取得する
+  - `updateEditorPermissions`: 編集者権限を更新する
+  - `removeEditorPermission`: 編集者権限を削除する
+  - `getSharedPlaces`: 共有中の場所一覧を取得する
 - **コンポーネント**:
   - `InviteEditorForm`: 編集者招待フォーム
   - `PermissionList`: 権限一覧
@@ -292,7 +332,12 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 料金プラン・支払い情報管理
 - **レイアウト**: UserLayout
 - **ユースケース**:
-  - REQ-012: サブスクリプション管理
+  - `getUserSubscription`: ユーザーのサブスクリプション情報を取得する
+  - `updateSubscriptionPlan`: サブスクリプションプランを変更する
+  - `updatePaymentMethod`: 支払い方法を更新する
+  - `getBillingHistory`: 請求履歴を取得する
+  - `getUserUsageMetrics`: 使用量統計を取得する
+  - `cancelSubscription`: サブスクリプションをキャンセルする
 - **コンポーネント**:
   - `PlanComparison`: プラン比較表
   - `PaymentMethod`: 支払い方法管理
@@ -306,7 +351,11 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: システム統計・概要表示
 - **レイアウト**: AdminLayout
 - **ユースケース**:
-  - REQ-032: 利用統計の表示
+  - `getSystemStatistics`: システム統計情報を取得する
+  - `getUserGrowthData`: ユーザー増加データを取得する
+  - `getContentStatistics`: コンテンツ統計を取得する
+  - `getRecentSystemActivity`: 最近のシステム活動を取得する
+  - `getActiveUserCount`: アクティブユーザー数を取得する
 - **コンポーネント**:
   - `SystemStats`: システム統計
   - `UserGrowthChart`: ユーザー増加グラフ
@@ -318,8 +367,12 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 全ユーザーの管理・検索・フィルタリング
 - **レイアウト**: AdminLayout
 - **ユースケース**:
-  - REQ-027: ユーザー一覧表示
-  - REQ-028: ユーザーの停止・削除
+  - `getAllUsers`: 全ユーザー一覧を取得する
+  - `searchUsers`: ユーザーを検索する
+  - `banUser`: ユーザーを停止する
+  - `deleteUser`: ユーザーを削除する
+  - `getUserDetails`: ユーザー詳細情報を取得する
+  - `filterUsers`: ユーザーをフィルタリングする
 - **コンポーネント**:
   - `UserSearchForm`: ユーザー検索
   - `UserList`: ユーザー一覧
@@ -331,8 +384,12 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 不適切コンテンツの管理・通報対応
 - **レイアウト**: AdminLayout
 - **ユースケース**:
-  - REQ-029: 不適切なコンテンツの管理
-  - REQ-030: コンテンツの一括管理
+  - `getReportedContent`: 通報されたコンテンツ一覧を取得する
+  - `moderateContent`: コンテンツを審査する
+  - `deleteContent`: コンテンツを削除する
+  - `bulkDeleteContent`: コンテンツを一括削除する
+  - `updateContentStatus`: コンテンツの状態を更新する
+  - `getContentReports`: コンテンツの通報詳細を取得する
 - **コンポーネント**:
   - `ReportQueue`: 通報キュー
   - `ContentModerationList`: コンテンツ審査一覧
@@ -344,7 +401,12 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: システム全体の設定管理
 - **レイアウト**: AdminLayout
 - **ユースケース**:
-  - REQ-031: システム設定管理
+  - `getSystemSettings`: システム設定を取得する
+  - `updateSystemSettings`: システム設定を更新する
+  - `updateTermsAndPolicies`: 利用規約・ポリシーを更新する
+  - `setMaintenanceMode`: メンテナンスモードを設定する
+  - `updateFeatureFlags`: 機能フラグを更新する
+  - `backupSystemData`: システムデータをバックアップする
 - **コンポーネント**:
   - `SystemSettingsForm`: システム設定フォーム
   - `TermsPolicyEditor`: 利用規約・ポリシー編集
@@ -356,7 +418,12 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 詳細レポート生成・ダウンロード
 - **レイアウト**: AdminLayout
 - **ユースケース**:
-  - REQ-033: レポート生成
+  - `generateUsageReport`: 利用状況レポートを生成する
+  - `exportReportData`: レポートデータをエクスポートする
+  - `getAnalyticsData`: 分析データを取得する
+  - `getReportHistory`: レポート履歴を取得する
+  - `scheduleReport`: 定期レポートをスケジュールする
+  - `downloadReport`: レポートをダウンロードする
 - **コンポーネント**:
   - `ReportGenerator`: レポート生成フォーム
   - `ReportHistory`: レポート履歴
@@ -370,9 +437,11 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **概要**: 特定場所へのチェックイン機能
 - **レイアウト**: UserLayout or Modal
 - **ユースケース**:
-  - REQ-022: 施設へのチェックイン
-  - REQ-023: チェックイン時の写真投稿
-  - REQ-024: チェックイン時のコメント投稿
+  - `checkinToPlace`: 場所にチェックインする
+  - `uploadCheckinPhotos`: チェックイン写真をアップロードする
+  - `validateUserLocation`: ユーザーの位置情報を検証する
+  - `createCheckinComment`: チェックインコメントを作成する
+  - `getPlaceForCheckin`: チェックイン対象の場所情報を取得する
 - **コンポーネント**:
   - `CheckinForm`: チェックインフォーム
   - `PhotoUploader`: 写真アップロード
@@ -383,7 +452,10 @@ Kissaアプリケーションのページ構成を、要件定義（`docs/requir
 - **パス**: モーダルとして実装
 - **概要**: 不適切コンテンツの通報
 - **ユースケース**:
-  - REQ-040: 不適切コンテンツの通報
+  - `reportContent`: コンテンツを通報する
+  - `validateReportData`: 通報データを検証する
+  - `sendReportNotification`: 通報通知を送信する
+  - `getReportReasons`: 通報理由一覧を取得する
 - **コンポーネント**:
   - `ReportForm`: 通報フォーム
   - `ReportReasonSelector`: 通報理由選択
