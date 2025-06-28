@@ -10,7 +10,7 @@ export class ValidationError<T> extends AnyError {
     override readonly message: string,
     cause?: unknown,
   ) {
-    super(message, cause);
+    super(message, undefined, cause);
   }
 }
 
