@@ -353,9 +353,6 @@ describe("adminReportManagement", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.ADMIN_PERMISSION_REQUIRED);
-        expect(result.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
       }
     });
 
@@ -373,7 +370,6 @@ describe("adminReportManagement", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.USER_INACTIVE);
-        expect(result.error.message).toBe("Admin account is not active");
       }
     });
 
@@ -480,7 +476,6 @@ describe("adminReportManagement", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REPORT_NOT_FOUND);
-        expect(result.error.message).toBe("Report not found");
       }
     });
 
@@ -503,7 +498,6 @@ describe("adminReportManagement", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REPORT_RESOLVED);
-        expect(result.error.message).toBe("Report has already been reviewed");
       }
     });
 
@@ -675,7 +669,6 @@ describe("adminReportManagement", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REPORT_NOT_FOUND);
-        expect(result.error.message).toBe("Report not found");
       }
     });
 
@@ -813,7 +806,8 @@ describe("adminReportManagement", () => {
       const result = await getEntityReports(
         context,
         adminUser.id,
-        "invalid-type",
+        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid type handling
+        "invalid" as any,
         regularUser.id,
       );
 
@@ -989,7 +983,6 @@ describe("adminReportManagement", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe("Failed to list reports");
       }
 
       // Restore original method

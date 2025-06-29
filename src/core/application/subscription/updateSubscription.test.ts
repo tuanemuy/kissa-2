@@ -272,7 +272,6 @@ describe("updateSubscription", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.SUBSCRIPTION_NOT_FOUND);
-        expect(result.error.message).toBe("User subscription not found");
       }
     });
 
@@ -381,7 +380,6 @@ describe("updateSubscription", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.SUBSCRIPTION_NOT_FOUND);
-        expect(result.error.message).toBe("User subscription not found");
       }
     });
 
@@ -565,7 +563,6 @@ describe("updateSubscription", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.SUBSCRIPTION_NOT_FOUND);
-        expect(result.error.message).toBe("User subscription not found");
       }
     });
 

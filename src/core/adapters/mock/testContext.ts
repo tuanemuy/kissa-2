@@ -68,6 +68,13 @@ export function createMockContext(options: MockContextOptions = {}): Context {
   const mockPlaceRepository = new MockPlaceRepository();
   const mockPlaceFavoriteRepository = new MockPlaceFavoriteRepository();
   const mockPlacePermissionRepository = new MockPlacePermissionRepository();
+
+  // Connect repositories so they can work together
+  mockRegionFavoriteRepository.setRegionRepository(mockRegionRepository);
+  mockRegionPinRepository.setRegionRepository(mockRegionRepository);
+  mockPlaceFavoriteRepository.setPlaceRepository(mockPlaceRepository);
+  mockPlacePermissionRepository.setUserRepository(mockUserRepository);
+  mockPlacePermissionRepository.setPlaceRepository(mockPlaceRepository);
   const mockCheckinRepository = new MockCheckinRepository();
   const mockCheckinPhotoRepository = new MockCheckinPhotoRepository();
   const mockReportRepository = new MockReportRepository();
@@ -78,6 +85,82 @@ export function createMockContext(options: MockContextOptions = {}): Context {
 
   if (options.shouldFailLocation) {
     mockLocationService.setShouldFail(true);
+  }
+
+  if (options.shouldFailSearch) {
+    mockRegionRepository.setShouldFailSearch(true);
+    mockPlaceRepository.setShouldFailSearch(true);
+  }
+
+  if (options.shouldThrowError) {
+    mockRegionRepository.setShouldThrowError(true);
+    mockPlaceRepository.setShouldThrowError(true);
+  }
+
+  if (options.shouldFailDelete) {
+    mockRegionRepository.setShouldFailDelete(true);
+    mockPlaceRepository.setShouldFailDelete(true);
+  }
+
+  if (options.shouldFailGetByRegion) {
+    mockPlaceRepository.setShouldFailGetByRegion(true);
+  }
+
+  if (options.shouldFailList) {
+    mockRegionRepository.setShouldFailList(true);
+  }
+
+  if (options.shouldFailFeatured) {
+    mockRegionRepository.setShouldFailFeatured(true);
+  }
+
+  if (options.shouldFailGetByCreator) {
+    mockRegionRepository.setShouldFailGetByCreator(true);
+  }
+
+  if (options.shouldFailUpdate) {
+    mockRegionRepository.setShouldFailUpdate(true);
+  }
+
+  if (options.shouldFailFindById) {
+    mockRegionRepository.setShouldFailFindById(true);
+    mockPlaceRepository.setShouldFailFindById(true);
+  }
+
+  if (options.shouldFailFindByUser) {
+    mockRegionFavoriteRepository.setShouldFailFindByUser(true);
+    mockRegionPinRepository.setShouldFailFindByUser(true);
+    mockPlaceFavoriteRepository.setShouldFailFindByUser(true);
+  }
+
+  if (options.shouldFailFindByUserAndRegion) {
+    mockRegionFavoriteRepository.setShouldFailFindByUserAndRegion(true);
+    mockRegionPinRepository.setShouldFailFindByUserAndRegion(true);
+    mockPlaceFavoriteRepository.setShouldFailFindByUserAndPlace(true);
+  }
+
+  if (options.shouldFailAdd) {
+    mockRegionFavoriteRepository.setShouldFailAdd(true);
+    mockRegionPinRepository.setShouldFailAdd(true);
+    mockPlaceFavoriteRepository.setShouldFailAdd(true);
+  }
+
+  if (options.shouldFailRemove) {
+    mockRegionFavoriteRepository.setShouldFailRemove(true);
+    mockRegionPinRepository.setShouldFailRemove(true);
+    mockPlaceFavoriteRepository.setShouldFailRemove(true);
+  }
+
+  if (options.shouldFailGetRegionsWithFavorites) {
+    mockRegionFavoriteRepository.setShouldFailGetRegionsWithFavorites(true);
+  }
+
+  if (options.shouldFailGetRegionsWithPins) {
+    mockRegionPinRepository.setShouldFailGetRegionsWithPins(true);
+  }
+
+  if (options.shouldFailReorder) {
+    mockRegionPinRepository.setShouldFailReorder(true);
   }
 
   const context: Context = {

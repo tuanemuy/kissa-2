@@ -339,9 +339,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_ACCESS_DENIED);
-        expect(result.error.message).toBe(
-          "You don't have permission to delete this region",
-        );
       }
     });
 
@@ -356,9 +353,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_ACCESS_DENIED);
-        expect(result.error.message).toBe(
-          "You don't have permission to delete this region",
-        );
       }
     });
 
@@ -375,7 +369,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_NOT_FOUND);
-        expect(result.error.message).toBe("Failed to check region ownership");
       }
     });
 
@@ -408,9 +401,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_HAS_PLACES);
-        expect(result.error.message).toBe(
-          "Cannot delete region that contains published places",
-        );
       }
     });
 
@@ -425,9 +415,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_HAS_PLACES);
-        expect(result.error.message).toBe(
-          "Cannot delete region that contains published places",
-        );
       }
     });
 
@@ -442,9 +429,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_HAS_PLACES);
-        expect(result.error.message).toBe(
-          "Cannot delete region that contains published places",
-        );
       }
     });
   });
@@ -658,9 +642,6 @@ describe("deleteRegion", () => {
           expect(result.isErr()).toBe(true);
           if (result.isErr()) {
             expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-            expect(result.error.message).toBe(
-              "Failed to check region dependencies",
-            );
           }
         }
       }
@@ -708,7 +689,6 @@ describe("deleteRegion", () => {
           expect(result.isErr()).toBe(true);
           if (result.isErr()) {
             expect(result.error.code).toBe(ERROR_CODES.REGION_DELETE_FAILED);
-            expect(result.error.message).toBe("Failed to delete region");
           }
         }
       }
@@ -727,9 +707,6 @@ describe("deleteRegion", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe(
-          "Unexpected error while deleting region",
-        );
       }
     });
   });

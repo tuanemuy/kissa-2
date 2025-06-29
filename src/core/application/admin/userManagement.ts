@@ -51,8 +51,8 @@ async function checkAdminPermissions(
   if (adminResult.isErr()) {
     return err(
       new AdminUserManagementError(
-        "Failed to find admin user",
-        ERROR_CODES.INTERNAL_ERROR,
+        "Admin user not found",
+        ERROR_CODES.USER_NOT_FOUND,
         adminResult.error,
       ),
     );
@@ -169,7 +169,7 @@ export async function updateUserRole(
     if (userResult.isErr()) {
       return err(
         new AdminUserManagementError(
-          "Failed to find target user",
+          "Target user not found",
           ERROR_CODES.QUERY_FAILED,
           userResult.error,
         ),
@@ -233,7 +233,7 @@ export async function updateUserStatus(
     if (userResult.isErr()) {
       return err(
         new AdminUserManagementError(
-          "Failed to find target user",
+          "Target user not found",
           ERROR_CODES.QUERY_FAILED,
           userResult.error,
         ),
@@ -300,7 +300,7 @@ export async function deleteUser(
     if (userResult.isErr()) {
       return err(
         new AdminUserManagementError(
-          "Failed to find target user",
+          "Target user not found",
           ERROR_CODES.QUERY_FAILED,
           userResult.error,
         ),

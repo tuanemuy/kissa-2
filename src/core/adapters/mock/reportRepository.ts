@@ -17,6 +17,7 @@ import type {
 export class MockReportRepository implements ReportRepository {
   private reports = new Map<string, Report>();
   private nextId = 1;
+  private pendingCreates = new Set<string>();
 
   constructor(initialReports: Report[] = []) {
     for (const report of initialReports) {
@@ -27,6 +28,7 @@ export class MockReportRepository implements ReportRepository {
   reset(): void {
     this.reports.clear();
     this.nextId = 1;
+    this.pendingCreates.clear();
   }
 
   addReport(report: Report): void {
@@ -37,21 +39,49 @@ export class MockReportRepository implements ReportRepository {
     reporterUserId: string,
     params: CreateReportParams,
   ): Promise<Result<Report, ReportRepositoryError>> {
-    const now = new Date();
-    const report: Report = {
-      id: uuidv7(),
-      reporterUserId,
-      entityType: params.entityType,
-      entityId: params.entityId,
-      type: params.type,
-      reason: params.reason,
-      status: "pending",
-      createdAt: now,
-      updatedAt: now,
-    };
+    // Create a unique key for this report combination
+    const reportKey = `${reporterUserId}:${params.entityType}:${params.entityId}`;
 
-    this.reports.set(report.id, report);
-    return ok(report);
+    // Check if this combination already exists or is being created
+    const existingReport = Array.from(this.reports.values()).find(
+      (r) =>
+        r.reporterUserId === reporterUserId &&
+        r.entityType === params.entityType &&
+        r.entityId === params.entityId,
+    );
+
+    if (existingReport || this.pendingCreates.has(reportKey)) {
+      return err(
+        new ReportRepositoryError(
+          "Report already exists",
+          "REPORT_ALREADY_EXISTS",
+        ),
+      );
+    }
+
+    // Mark this combination as pending creation
+    this.pendingCreates.add(reportKey);
+
+    try {
+      const now = new Date();
+      const report: Report = {
+        id: uuidv7(),
+        reporterUserId,
+        entityType: params.entityType,
+        entityId: params.entityId,
+        type: params.type,
+        reason: params.reason,
+        status: "pending",
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      this.reports.set(report.id, report);
+      return ok(report);
+    } finally {
+      // Remove from pending creates
+      this.pendingCreates.delete(reportKey);
+    }
   }
 
   async findById(

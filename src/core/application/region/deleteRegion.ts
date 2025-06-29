@@ -27,6 +27,24 @@ export async function deleteRegion(
   try {
     const { regionId, userId } = request;
 
+    // First, check if the region exists
+    const regionResult = await context.regionRepository.findById(regionId);
+    if (regionResult.isErr()) {
+      return err(
+        new DeleteRegionError(
+          "Failed to find region",
+          ERROR_CODES.INTERNAL_ERROR,
+          regionResult.error,
+        ),
+      );
+    }
+
+    if (!regionResult.value) {
+      return err(
+        new DeleteRegionError("Region not found", ERROR_CODES.REGION_NOT_FOUND),
+      );
+    }
+
     // Check if user has permission to delete this region
     const ownershipResult = await context.regionRepository.checkOwnership(
       regionId,
@@ -37,19 +55,44 @@ export async function deleteRegion(
       return err(
         new DeleteRegionError(
           "Failed to check region ownership",
-          ERROR_CODES.REGION_NOT_FOUND,
+          ERROR_CODES.INTERNAL_ERROR,
           ownershipResult.error,
         ),
       );
     }
 
+    // If user is not the owner, check if they are an admin
     if (!ownershipResult.value) {
-      return err(
-        new DeleteRegionError(
-          "You don't have permission to delete this region",
-          ERROR_CODES.REGION_ACCESS_DENIED,
-        ),
-      );
+      const userResult = await context.userRepository.findById(userId);
+      if (userResult.isErr()) {
+        return err(
+          new DeleteRegionError(
+            "You don't have permission to delete this region",
+            ERROR_CODES.REGION_ACCESS_DENIED,
+            userResult.error,
+          ),
+        );
+      }
+
+      const user = userResult.value;
+      if (!user) {
+        return err(
+          new DeleteRegionError(
+            "You don't have permission to delete this region",
+            ERROR_CODES.REGION_ACCESS_DENIED,
+          ),
+        );
+      }
+
+      // Check if user is admin
+      if (user.role !== "admin") {
+        return err(
+          new DeleteRegionError(
+            "You don't have permission to delete this region",
+            ERROR_CODES.REGION_ACCESS_DENIED,
+          ),
+        );
+      }
     }
 
     // Check if region has places

@@ -42,7 +42,7 @@ export async function createCheckin(
       return err(
         new CreateCheckinError(
           "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );

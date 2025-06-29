@@ -15,6 +15,8 @@ import type {
   ListUsersQuery,
   NotificationSettings,
   PasswordResetToken,
+  SubscriptionPlan,
+  SubscriptionStatus,
   UpdateUserProfileParams,
   User,
   UserRole,
@@ -22,6 +24,13 @@ import type {
   UserStatus,
   UserSubscription,
 } from "@/core/domain/user/types";
+
+// Simple UUID validation function
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
 
 export class MockUserRepository implements UserRepository {
   private users = new Map<string, User>();
@@ -75,6 +84,9 @@ export class MockUserRepository implements UserRepository {
   async findById(
     id: string,
   ): Promise<Result<User | null, UserRepositoryError>> {
+    if (!isValidUUID(id)) {
+      return err(new UserRepositoryError("Invalid user ID format"));
+    }
     const user = this.users.get(id);
     return ok(user || null);
   }
@@ -328,6 +340,14 @@ export class MockUserSubscriptionRepository
   async create(
     subscription: Omit<UserSubscription, "id" | "createdAt" | "updatedAt">,
   ): Promise<Result<UserSubscription, UserRepositoryError>> {
+    // Check if user already has a subscription
+    const existingSubscription = Array.from(this.subscriptions.values()).find(
+      (s) => s.userId === subscription.userId,
+    );
+    if (existingSubscription) {
+      return err(new UserRepositoryError("User already has a subscription"));
+    }
+
     const newSubscription: UserSubscription = {
       id: uuidv7(),
       ...subscription,
@@ -392,6 +412,95 @@ export class MockUserSubscriptionRepository
 
     this.subscriptions.set(id, updatedSubscription);
     return ok(updatedSubscription);
+  }
+
+  async list(query: {
+    pagination: {
+      page: number;
+      limit: number;
+      order: "asc" | "desc";
+      orderBy: "createdAt" | "updatedAt";
+    };
+    filter: {
+      status?: SubscriptionStatus;
+      plan?: SubscriptionPlan;
+      dateRange?: {
+        from: Date;
+        to: Date;
+      };
+    };
+  }): Promise<
+    Result<{ items: UserSubscription[]; count: number }, UserRepositoryError>
+  > {
+    let subscriptions = Array.from(this.subscriptions.values());
+
+    // Apply filters
+    if (query.filter.status) {
+      subscriptions = subscriptions.filter(
+        (s) => s.status === query.filter.status,
+      );
+    }
+    if (query.filter.plan) {
+      subscriptions = subscriptions.filter((s) => s.plan === query.filter.plan);
+    }
+    if (query.filter.dateRange) {
+      subscriptions = subscriptions.filter(
+        (s) =>
+          s.createdAt >= query.filter.dateRange?.from &&
+          s.createdAt <= query.filter.dateRange?.to,
+      );
+    }
+
+    // Apply sorting
+    subscriptions.sort((a, b) => {
+      const aValue = a[query.pagination.orderBy];
+      const bValue = b[query.pagination.orderBy];
+      const modifier = query.pagination.order === "asc" ? 1 : -1;
+      return aValue < bValue ? -modifier : aValue > bValue ? modifier : 0;
+    });
+
+    // Apply pagination
+    const start = (query.pagination.page - 1) * query.pagination.limit;
+    const end = start + query.pagination.limit;
+    const items = subscriptions.slice(start, end);
+
+    return ok({ items, count: subscriptions.length });
+  }
+
+  async countByStatus(): Promise<
+    Result<Record<SubscriptionStatus, number>, UserRepositoryError>
+  > {
+    const subscriptions = Array.from(this.subscriptions.values());
+    const counts: Record<SubscriptionStatus, number> = {
+      none: 0,
+      trial: 0,
+      active: 0,
+      expired: 0,
+      cancelled: 0,
+    };
+
+    for (const subscription of subscriptions) {
+      counts[subscription.status]++;
+    }
+
+    return ok(counts);
+  }
+
+  async countByPlan(): Promise<
+    Result<Record<SubscriptionPlan, number>, UserRepositoryError>
+  > {
+    const subscriptions = Array.from(this.subscriptions.values());
+    const counts: Record<SubscriptionPlan, number> = {
+      free: 0,
+      standard: 0,
+      premium: 0,
+    };
+
+    for (const subscription of subscriptions) {
+      counts[subscription.plan]++;
+    }
+
+    return ok(counts);
   }
 }
 

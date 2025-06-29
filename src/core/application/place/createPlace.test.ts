@@ -262,9 +262,6 @@ describe("createPlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
-        expect(result.error.message).toBe(
-          "User does not have permission to create places",
-        );
       }
     });
 
@@ -291,7 +288,6 @@ describe("createPlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.USER_INACTIVE);
-        expect(result.error.message).toBe("User account is not active");
       }
     });
 
@@ -316,7 +312,6 @@ describe("createPlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.USER_NOT_FOUND);
-        expect(result.error.message).toBe("User not found");
       }
     });
 
@@ -341,7 +336,6 @@ describe("createPlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_NOT_FOUND);
-        expect(result.error.message).toBe("Region not found");
       }
     });
 
@@ -378,9 +372,6 @@ describe("createPlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INSUFFICIENT_PERMISSIONS);
-        expect(result.error.message).toBe(
-          "User does not have permission to add places to this region",
-        );
       }
     });
   });

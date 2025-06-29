@@ -70,7 +70,7 @@ async function checkAdminPermissions(
     return err(
       new AdminReportManagementError(
         "Failed to find admin user",
-        ERROR_CODES.INTERNAL_ERROR,
+        ERROR_CODES.USER_NOT_FOUND,
         adminResult.error,
       ),
     );

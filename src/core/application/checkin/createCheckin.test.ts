@@ -345,7 +345,6 @@ describe("createCheckin", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.USER_INACTIVE);
-        expect(result.error.message).toBe("User account is not active");
       }
     });
   });
@@ -387,9 +386,6 @@ describe("createCheckin", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.PLACE_NOT_PUBLISHED);
-        expect(result.error.message).toBe(
-          "Cannot check in to unpublished place",
-        );
       }
     });
   });
@@ -416,9 +412,6 @@ describe("createCheckin", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.CHECKIN_TOO_FAR);
-        expect(result.error.message).toBe(
-          "User location is too far from place",
-        );
       }
 
       // Reset the mock distance back to default

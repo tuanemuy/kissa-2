@@ -1,4 +1,4 @@
-import { ok, type Result } from "neverthrow";
+import { err, ok, type Result } from "neverthrow";
 import {
   type EmailService,
   EmailServiceError,
@@ -41,8 +41,8 @@ export class MockEmailService implements EmailService {
     verificationToken: string,
   ): Promise<Result<void, EmailServiceError>> {
     if (this.shouldFail) {
-      return Promise.reject(
-        new EmailServiceError("Failed to send verification email"),
+      return Promise.resolve(
+        err(new EmailServiceError("Failed to send verification email")),
       );
     }
 
@@ -63,8 +63,8 @@ export class MockEmailService implements EmailService {
     resetToken: string,
   ): Promise<Result<void, EmailServiceError>> {
     if (this.shouldFail) {
-      return Promise.reject(
-        new EmailServiceError("Failed to send password reset email"),
+      return Promise.resolve(
+        err(new EmailServiceError("Failed to send password reset email")),
       );
     }
 
@@ -86,8 +86,8 @@ export class MockEmailService implements EmailService {
     invitationToken: string,
   ): Promise<Result<void, EmailServiceError>> {
     if (this.shouldFail) {
-      return Promise.reject(
-        new EmailServiceError("Failed to send editor invitation email"),
+      return Promise.resolve(
+        err(new EmailServiceError("Failed to send editor invitation email")),
       );
     }
 
@@ -109,8 +109,8 @@ export class MockEmailService implements EmailService {
     name: string,
   ): Promise<Result<void, EmailServiceError>> {
     if (this.shouldFail) {
-      return Promise.reject(
-        new EmailServiceError("Failed to send welcome email"),
+      return Promise.resolve(
+        err(new EmailServiceError("Failed to send welcome email")),
       );
     }
 

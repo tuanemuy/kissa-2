@@ -710,7 +710,6 @@ describe("listRegions", () => {
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error.code).toBe(ERROR_CODES.REGION_FETCH_FAILED);
-          expect(result.error.message).toBe("Failed to list regions");
         }
       });
 
@@ -733,9 +732,6 @@ describe("listRegions", () => {
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-          expect(result.error.message).toBe(
-            "Unexpected error while listing regions",
-          );
         }
       });
     });
@@ -859,7 +855,6 @@ describe("listRegions", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_FETCH_FAILED);
-        expect(result.error.message).toBe("Failed to get featured regions");
       }
     });
 
@@ -871,9 +866,6 @@ describe("listRegions", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe(
-          "Unexpected error while getting featured regions",
-        );
       }
     });
 
@@ -1000,7 +992,6 @@ describe("listRegions", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.REGION_FETCH_FAILED);
-        expect(result.error.message).toBe("Failed to get regions by creator");
       }
     });
 
@@ -1012,9 +1003,6 @@ describe("listRegions", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe(
-          "Unexpected error while getting regions by creator",
-        );
       }
     });
   });

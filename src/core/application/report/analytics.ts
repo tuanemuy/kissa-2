@@ -28,58 +28,9 @@ export async function getSubscriptionAnalytics(
 ): Promise<Result<SubscriptionAnalytics, AnalyticsError>> {
   try {
     // Get subscription counts by status
-    const [
-      totalResult,
-      activeResult,
-      trialResult,
-      expiredResult,
-      cancelledResult,
-    ] = await Promise.all([
-      context.userRepository.list({
-        pagination: {
-          page: 1,
-          limit: 1,
-          order: "desc" as const,
-          orderBy: "createdAt",
-        },
-        filter: {},
-      }),
-      context.userRepository.list({
-        pagination: {
-          page: 1,
-          limit: 1,
-          order: "desc" as const,
-          orderBy: "createdAt",
-        },
-        filter: {},
-      }),
-      context.userRepository.list({
-        pagination: {
-          page: 1,
-          limit: 1,
-          order: "desc" as const,
-          orderBy: "createdAt",
-        },
-        filter: {},
-      }),
-      context.userRepository.list({
-        pagination: {
-          page: 1,
-          limit: 1,
-          order: "desc" as const,
-          orderBy: "createdAt",
-        },
-        filter: {},
-      }),
-      context.userRepository.list({
-        pagination: {
-          page: 1,
-          limit: 1,
-          order: "desc" as const,
-          orderBy: "createdAt",
-        },
-        filter: {},
-      }),
+    const [statusCountsResult, planCountsResult] = await Promise.all([
+      context.userSubscriptionRepository.countByStatus(),
+      context.userSubscriptionRepository.countByPlan(),
     ]);
 
     // Calculate date ranges
@@ -90,75 +41,104 @@ export async function getSubscriptionAnalytics(
 
     // Get new subscribers counts
     const [monthlyNewResult, weeklyNewResult] = await Promise.all([
-      context.userRepository.list({
+      context.userSubscriptionRepository.list({
         pagination: {
           page: 1,
           limit: 1000,
           order: "desc" as const,
           orderBy: "createdAt",
         },
-        filter: {},
+        filter: {
+          dateRange: {
+            from: startOfMonth,
+            to: now,
+          },
+        },
       }),
-      context.userRepository.list({
+      context.userSubscriptionRepository.list({
         pagination: {
           page: 1,
           limit: 1000,
           order: "desc" as const,
           orderBy: "createdAt",
         },
-        filter: {},
+        filter: {
+          dateRange: {
+            from: startOfWeek,
+            to: now,
+          },
+        },
       }),
     ]);
 
     // Calculate analytics data
-    const totalSubscribers = totalResult.isOk() ? totalResult.value.count : 0;
-    const activeSubscribers = activeResult.isOk()
-      ? activeResult.value.count
-      : 0;
-    const trialSubscribers = trialResult.isOk() ? trialResult.value.count : 0;
-    const expiredSubscribers = expiredResult.isOk()
-      ? expiredResult.value.count
-      : 0;
-    const cancelledSubscribers = cancelledResult.isOk()
-      ? cancelledResult.value.count
-      : 0;
+    if (statusCountsResult.isErr() || planCountsResult.isErr()) {
+      return err(
+        new AnalyticsError(
+          "Failed to get subscription counts",
+          ERROR_CODES.INTERNAL_ERROR,
+          statusCountsResult.isErr()
+            ? statusCountsResult.error
+            : planCountsResult.isErr()
+              ? planCountsResult.error
+              : undefined,
+        ),
+      );
+    }
 
-    // Filter new subscribers by date
+    const statusCounts = statusCountsResult.value;
+    const planCounts = planCountsResult.value;
+
+    const totalSubscribers = Object.values(statusCounts).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+    const activeSubscribers = statusCounts.active;
+    const trialSubscribers = statusCounts.trial;
+    const expiredSubscribers = statusCounts.expired;
+    const cancelledSubscribers = statusCounts.cancelled;
+
+    // Get new subscriber counts
     const monthlyNewUsers = monthlyNewResult.isOk()
-      ? monthlyNewResult.value.items.filter(
-          (user) => user.createdAt >= startOfMonth,
-        ).length
+      ? monthlyNewResult.value.count
       : 0;
     const weeklyNewUsers = weeklyNewResult.isOk()
-      ? weeklyNewResult.value.items.filter(
-          (user) => user.createdAt >= startOfWeek,
-        ).length
+      ? weeklyNewResult.value.count
       : 0;
 
     // Calculate metrics
     const churnRate =
       totalSubscribers > 0
-        ? (cancelledSubscribers / totalSubscribers) * 100
+        ? Math.min((cancelledSubscribers / totalSubscribers) * 100, 100)
         : 0;
     const conversionRate =
-      trialSubscribers > 0 ? (activeSubscribers / trialSubscribers) * 100 : 0;
+      trialSubscribers > 0
+        ? Math.min((activeSubscribers / trialSubscribers) * 100, 100)
+        : 0;
 
-    // Plan distribution (simplified - would need actual subscription data)
+    // Plan distribution
     const planDistribution = [
       {
         plan: "free" as const,
-        count: totalSubscribers - activeSubscribers,
-        percentage: 60,
+        count: planCounts.free,
+        percentage:
+          totalSubscribers > 0 ? (planCounts.free / totalSubscribers) * 100 : 0,
       },
       {
         plan: "standard" as const,
-        count: Math.floor(activeSubscribers * 0.7),
-        percentage: 30,
+        count: planCounts.standard,
+        percentage:
+          totalSubscribers > 0
+            ? (planCounts.standard / totalSubscribers) * 100
+            : 0,
       },
       {
         plan: "premium" as const,
-        count: Math.floor(activeSubscribers * 0.3),
-        percentage: 10,
+        count: planCounts.premium,
+        percentage:
+          totalSubscribers > 0
+            ? (planCounts.premium / totalSubscribers) * 100
+            : 0,
       },
     ];
 
@@ -167,32 +147,42 @@ export async function getSubscriptionAnalytics(
       {
         status: "active" as const,
         count: activeSubscribers,
-        percentage: (activeSubscribers / totalSubscribers) * 100,
+        percentage:
+          totalSubscribers > 0
+            ? (activeSubscribers / totalSubscribers) * 100
+            : 0,
       },
       {
         status: "trial" as const,
         count: trialSubscribers,
-        percentage: (trialSubscribers / totalSubscribers) * 100,
+        percentage:
+          totalSubscribers > 0
+            ? (trialSubscribers / totalSubscribers) * 100
+            : 0,
       },
       {
         status: "expired" as const,
         count: expiredSubscribers,
-        percentage: (expiredSubscribers / totalSubscribers) * 100,
+        percentage:
+          totalSubscribers > 0
+            ? (expiredSubscribers / totalSubscribers) * 100
+            : 0,
       },
       {
         status: "cancelled" as const,
         count: cancelledSubscribers,
-        percentage: (cancelledSubscribers / totalSubscribers) * 100,
+        percentage:
+          totalSubscribers > 0
+            ? (cancelledSubscribers / totalSubscribers) * 100
+            : 0,
       },
       {
         status: "none" as const,
-        count:
-          totalSubscribers -
-          activeSubscribers -
-          trialSubscribers -
-          expiredSubscribers -
-          cancelledSubscribers,
-        percentage: 0,
+        count: statusCounts.none,
+        percentage:
+          totalSubscribers > 0
+            ? (statusCounts.none / totalSubscribers) * 100
+            : 0,
       },
     ];
 
@@ -524,13 +514,13 @@ export async function getContentAnalytics(
       ],
       topRegions: [
         {
-          regionId: "123",
+          regionId: "01234567-89ab-4def-8123-456789abcdef",
           regionName: "Tokyo",
           placeCount: 100,
           checkinCount: 500,
         },
         {
-          regionId: "456",
+          regionId: "01234567-89ab-4def-9123-456789abcde0",
           regionName: "Osaka",
           placeCount: 80,
           checkinCount: 400,

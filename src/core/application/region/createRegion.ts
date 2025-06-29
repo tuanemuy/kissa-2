@@ -38,7 +38,7 @@ export async function createRegion(
       return err(
         new CreateRegionError(
           "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );

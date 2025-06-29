@@ -60,7 +60,7 @@ async function checkAdminPermissions(
   if (adminResult.isErr()) {
     return err(
       new AdminContentManagementError(
-        "Failed to find admin user",
+        "Admin user not found",
         adminResult.error,
       ),
     );

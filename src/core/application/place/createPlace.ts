@@ -79,8 +79,8 @@ export async function createPlace(
     if (userResult.isErr()) {
       return err(
         new CreatePlaceError(
-          "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          "User not found",
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );
@@ -120,7 +120,7 @@ export async function createPlace(
       return err(
         new CreatePlaceError(
           "Failed to find region",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.REGION_NOT_FOUND,
           regionResult.error,
         ),
       );

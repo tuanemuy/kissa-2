@@ -50,7 +50,7 @@ export async function inviteEditorToPlace(
       return err(
         new PlacePermissionError(
           "Failed to find inviter",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           inviterResult.error,
         ),
       );
@@ -119,7 +119,7 @@ export async function inviteEditorToPlace(
       return err(
         new PlacePermissionError(
           "Failed to find invitee",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           inviteeResult.error,
         ),
       );
@@ -173,6 +173,18 @@ export async function inviteEditorToPlace(
       inviteParams,
     );
     if (inviteResult.isErr()) {
+      // If it's a duplicate error, return the appropriate error code
+      if (
+        inviteResult.error.message ===
+        "User already has permission for this place"
+      ) {
+        return err(
+          new PlacePermissionError(
+            "User already has permission for this place",
+            ERROR_CODES.ALREADY_EXISTS,
+          ),
+        );
+      }
       return err(
         new PlacePermissionError(
           "Failed to create invitation",
@@ -224,7 +236,7 @@ export async function acceptEditorInvitation(
       return err(
         new PlacePermissionError(
           "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );
@@ -278,7 +290,7 @@ export async function updateEditorPermission(
       return err(
         new PlacePermissionError(
           "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );
@@ -340,7 +352,7 @@ export async function removeEditorPermission(
       return err(
         new PlacePermissionError(
           "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );

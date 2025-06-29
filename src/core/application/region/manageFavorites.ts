@@ -5,14 +5,11 @@ import type {
   RegionWithStats,
 } from "@/core/domain/region/types";
 import { AnyError } from "@/lib/error";
+import { ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
 
 export class RegionFavoriteApplicationError extends AnyError {
   override readonly name = "RegionFavoriteApplicationError";
-
-  constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
-  }
 }
 
 /**
@@ -22,19 +19,37 @@ export async function addRegionToFavorites(
   context: Context,
   params: AddRegionToFavoritesParams,
 ): Promise<Result<RegionFavorite, RegionFavoriteApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(params.userId) || !uuidRegex.test(params.regionId)) {
+    return err(
+      new RegionFavoriteApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   // Check if region exists
   const regionResult = await context.regionRepository.findById(params.regionId);
   if (regionResult.isErr()) {
     return err(
       new RegionFavoriteApplicationError(
         "Failed to verify region existence",
+        ERROR_CODES.INTERNAL_ERROR,
         regionResult.error,
       ),
     );
   }
 
   if (!regionResult.value) {
-    return err(new RegionFavoriteApplicationError("Region not found"));
+    return err(
+      new RegionFavoriteApplicationError(
+        "Region not found",
+        ERROR_CODES.REGION_NOT_FOUND,
+      ),
+    );
   }
 
   // Check if already favorited
@@ -47,6 +62,7 @@ export async function addRegionToFavorites(
     return err(
       new RegionFavoriteApplicationError(
         "Failed to check existing favorite",
+        ERROR_CODES.INTERNAL_ERROR,
         existingFavoriteResult.error,
       ),
     );
@@ -54,7 +70,10 @@ export async function addRegionToFavorites(
 
   if (existingFavoriteResult.value) {
     return err(
-      new RegionFavoriteApplicationError("Region is already favorited"),
+      new RegionFavoriteApplicationError(
+        "Region is already favorited",
+        ERROR_CODES.ALREADY_EXISTS,
+      ),
     );
   }
 
@@ -64,6 +83,7 @@ export async function addRegionToFavorites(
     return err(
       new RegionFavoriteApplicationError(
         "Failed to add region to favorites",
+        ERROR_CODES.INTERNAL_ERROR,
         addResult.error,
       ),
     );
@@ -80,6 +100,18 @@ export async function removeRegionFromFavorites(
   userId: string,
   regionId: string,
 ): Promise<Result<void, RegionFavoriteApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId) || !uuidRegex.test(regionId)) {
+    return err(
+      new RegionFavoriteApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   // Check if favorited
   const existingFavoriteResult =
     await context.regionFavoriteRepository.findByUserAndRegion(
@@ -90,13 +122,19 @@ export async function removeRegionFromFavorites(
     return err(
       new RegionFavoriteApplicationError(
         "Failed to check existing favorite",
+        ERROR_CODES.INTERNAL_ERROR,
         existingFavoriteResult.error,
       ),
     );
   }
 
   if (!existingFavoriteResult.value) {
-    return err(new RegionFavoriteApplicationError("Region is not favorited"));
+    return err(
+      new RegionFavoriteApplicationError(
+        "Region is not favorited",
+        ERROR_CODES.NOT_FOUND,
+      ),
+    );
   }
 
   // Remove from favorites
@@ -108,6 +146,7 @@ export async function removeRegionFromFavorites(
     return err(
       new RegionFavoriteApplicationError(
         "Failed to remove region from favorites",
+        ERROR_CODES.INTERNAL_ERROR,
         removeResult.error,
       ),
     );
@@ -124,6 +163,18 @@ export async function getUserFavoriteRegions(
   userId: string,
   limit?: number,
 ): Promise<Result<RegionWithStats[], RegionFavoriteApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    return err(
+      new RegionFavoriteApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   const result = await context.regionFavoriteRepository.getRegionsWithFavorites(
     userId,
     limit,
@@ -132,6 +183,7 @@ export async function getUserFavoriteRegions(
     return err(
       new RegionFavoriteApplicationError(
         "Failed to get favorite regions",
+        ERROR_CODES.INTERNAL_ERROR,
         result.error,
       ),
     );
@@ -147,11 +199,24 @@ export async function getUserFavoriteList(
   context: Context,
   userId: string,
 ): Promise<Result<RegionFavorite[], RegionFavoriteApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    return err(
+      new RegionFavoriteApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   const result = await context.regionFavoriteRepository.findByUser(userId);
   if (result.isErr()) {
     return err(
       new RegionFavoriteApplicationError(
         "Failed to get favorite list",
+        ERROR_CODES.INTERNAL_ERROR,
         result.error,
       ),
     );

@@ -29,6 +29,24 @@ export async function updateRegion(
   try {
     const { regionId, userId, params } = request;
 
+    // First, check if the region exists
+    const regionResult = await context.regionRepository.findById(regionId);
+    if (regionResult.isErr()) {
+      return err(
+        new UpdateRegionError(
+          "Failed to find region",
+          ERROR_CODES.INTERNAL_ERROR,
+          regionResult.error,
+        ),
+      );
+    }
+
+    if (!regionResult.value) {
+      return err(
+        new UpdateRegionError("Region not found", ERROR_CODES.REGION_NOT_FOUND),
+      );
+    }
+
     // Check if user has permission to update this region
     const ownershipResult = await context.regionRepository.checkOwnership(
       regionId,
@@ -39,7 +57,7 @@ export async function updateRegion(
       return err(
         new UpdateRegionError(
           "Failed to check region ownership",
-          ERROR_CODES.REGION_NOT_FOUND,
+          ERROR_CODES.INTERNAL_ERROR,
           ownershipResult.error,
         ),
       );

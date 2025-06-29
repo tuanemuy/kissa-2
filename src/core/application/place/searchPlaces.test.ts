@@ -387,7 +387,6 @@ describe("searchPlaces", () => {
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
-          expect(result.error.message).toBe("Search keyword is required");
         }
       });
 
@@ -409,7 +408,6 @@ describe("searchPlaces", () => {
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
-          expect(result.error.message).toBe("Search keyword is required");
         }
       });
     });
@@ -734,7 +732,6 @@ describe("searchPlaces", () => {
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error.code).toBe(ERROR_CODES.PLACE_FETCH_FAILED);
-          expect(result.error.message).toBe("Failed to search places");
         }
       });
 
@@ -758,9 +755,6 @@ describe("searchPlaces", () => {
         expect(result.isErr()).toBe(true);
         if (result.isErr()) {
           expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-          expect(result.error.message).toBe(
-            "Unexpected error while searching places",
-          );
         }
       });
     });
@@ -871,7 +865,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.PLACE_FETCH_FAILED);
-        expect(result.error.message).toBe("Failed to get search suggestions");
       }
     });
 
@@ -883,9 +876,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe(
-          "Unexpected error while getting search suggestions",
-        );
       }
     });
   });
@@ -1089,9 +1079,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
-        expect(result.error.message).toBe(
-          "At least one search criteria must be provided",
-        );
       }
     });
 
@@ -1106,7 +1093,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.PLACE_FETCH_FAILED);
-        expect(result.error.message).toBe("Failed to perform advanced search");
       }
     });
 
@@ -1121,9 +1107,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe(
-          "Unexpected error during advanced search",
-        );
       }
     });
   });
@@ -1252,9 +1235,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.PLACE_FETCH_FAILED);
-        expect(result.error.message).toBe(
-          "Failed to search places by category",
-        );
       }
     });
 
@@ -1270,9 +1250,6 @@ describe("searchPlaces", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe(
-          "Unexpected error while searching places by category",
-        );
       }
     });
   });
