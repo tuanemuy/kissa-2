@@ -2,7 +2,7 @@
 
 ## 背景
 
-- `docs/requirements.md` に要件を定義した
+- `docs/requirements.tsv` に要件を定義した
 - `docs/backend.md` にバックエンドの実装例を記載した
 - `docs/usecases.tsv` に想定されるページ構成とユースケースを定義した
 

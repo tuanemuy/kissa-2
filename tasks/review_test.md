@@ -2,13 +2,14 @@
 
 ## 背景
 
-- `docs/requirements.md` に要件を定義した
+- `docs/requirements.tsv` に要件を定義した
 - `docs/backend.md` にバックエンドの実装例を記載した
 - `docs/test.md` にテストの設計を記載した
 - `docs/usecases.tsv` にページ構成とユースケースを定義した
 
 ## タスク
 
+- すべてのユースケースに対してテストが実装されているか確認する
 - テストの実装が設計に従っているか確認する
 - テストの品質をレビューする
 - `logs/${yyyyMMddHHmm}_review_test.md` を更新する
