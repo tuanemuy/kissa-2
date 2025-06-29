@@ -446,8 +446,10 @@ export class MockUserSubscriptionRepository
     if (query.filter.dateRange) {
       subscriptions = subscriptions.filter(
         (s) =>
-          s.createdAt >= query.filter.dateRange?.from &&
-          s.createdAt <= query.filter.dateRange?.to,
+          query.filter.dateRange?.from !== undefined &&
+          query.filter.dateRange?.to !== undefined &&
+          s.createdAt >= query.filter.dateRange.from &&
+          s.createdAt <= query.filter.dateRange.to,
       );
     }
 
