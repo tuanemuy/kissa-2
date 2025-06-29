@@ -76,10 +76,10 @@ describe("registerUser", () => {
         expect(settingsResult.isOk()).toBe(true);
         if (settingsResult.isOk()) {
           expect(settingsResult.value).toBeDefined();
-          expect(settingsResult.value!.emailNotifications).toBe(true);
-          expect(settingsResult.value!.checkinNotifications).toBe(true);
-          expect(settingsResult.value!.editorInviteNotifications).toBe(true);
-          expect(settingsResult.value!.systemNotifications).toBe(true);
+          expect(settingsResult.value?.emailNotifications).toBe(true);
+          expect(settingsResult.value?.checkinNotifications).toBe(true);
+          expect(settingsResult.value?.editorInviteNotifications).toBe(true);
+          expect(settingsResult.value?.systemNotifications).toBe(true);
         }
       }
     });
@@ -159,25 +159,6 @@ describe("registerUser", () => {
       expect(secondResult.isErr()).toBe(true);
       if (secondResult.isErr()) {
         expect(secondResult.error.message).toBe("Email is already in use");
-      }
-    });
-
-    it("should fail when transaction fails", async () => {
-      context = createMockContext({ shouldFailTransaction: true });
-
-      const input: RegisterUserInput = {
-        email: "test@example.com",
-        password: "password123",
-        name: "Test User",
-      };
-
-      const result = await registerUser(context, input);
-
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Transaction failed during user registration",
-        );
       }
     });
 

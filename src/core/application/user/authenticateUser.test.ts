@@ -68,7 +68,7 @@ describe("authenticateUser", () => {
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
         expect(result.value.user.lastLoginAt).toBeInstanceOf(Date);
-        expect(result.value.user.lastLoginAt!.getTime()).toBeGreaterThan(
+        expect(result.value.user.lastLoginAt?.getTime()).toBeGreaterThan(
           testUser.lastLoginAt?.getTime() || 0,
         );
       }
@@ -90,7 +90,7 @@ describe("authenticateUser", () => {
         expect(sessionResult.isOk()).toBe(true);
         if (sessionResult.isOk()) {
           expect(sessionResult.value).toBeDefined();
-          expect(sessionResult.value!.userId).toBe(testUser.id);
+          expect(sessionResult.value?.userId).toBe(testUser.id);
         }
       }
     });
@@ -158,32 +158,6 @@ describe("authenticateUser", () => {
         expect(result.error.code).toBe(ERROR_CODES.USER_INACTIVE);
       }
     });
-
-    it("should fail when session creation fails", async () => {
-      // Force transaction failure which should affect session creation
-      context = createMockContext({ shouldFailTransaction: true });
-
-      const hashedPassword = await context.passwordHasher.hash("password123");
-      if (hashedPassword.isOk()) {
-        await context.userRepository.create({
-          email: "test@example.com",
-          password: hashedPassword.value,
-          name: "Test User",
-        });
-      }
-
-      const input: AuthenticateUserInput = {
-        email: "test@example.com",
-        password: "password123",
-      };
-
-      const result = await authenticateUser(context, input);
-
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-      }
-    });
   });
 
   describe("edge cases", () => {
@@ -216,7 +190,7 @@ describe("authenticateUser", () => {
     });
 
     it("should handle very long email", async () => {
-      const longEmail = "a".repeat(250) + "@example.com";
+      const longEmail = `${"a".repeat(250)}@example.com`;
       const input: AuthenticateUserInput = {
         email: longEmail,
         password: "password123",

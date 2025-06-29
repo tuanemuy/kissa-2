@@ -67,7 +67,7 @@ export class MockRegionRepository implements RegionRepository {
 
   async findById(
     id: string,
-    userId?: string,
+    _userId?: string,
   ): Promise<Result<RegionWithStats | null, RegionRepositoryError>> {
     const region = this.regions.get(id);
     if (!region) {
@@ -133,7 +133,7 @@ export class MockRegionRepository implements RegionRepository {
 
   async list(
     query: ListRegionsQuery,
-    userId?: string,
+    _userId?: string,
   ): Promise<
     Result<{ items: RegionWithStats[]; count: number }, RegionRepositoryError>
   > {
@@ -169,8 +169,8 @@ export class MockRegionRepository implements RegionRepository {
     if (query.sort) {
       const { field, direction } = query.sort;
       regions.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
+        let aValue: string | number;
+        let bValue: string | number;
 
         switch (field) {
           case "name":
@@ -220,7 +220,7 @@ export class MockRegionRepository implements RegionRepository {
 
   async search(
     query: SearchRegionsQuery,
-    userId?: string,
+    _userId?: string,
   ): Promise<
     Result<{ items: RegionWithStats[]; count: number }, RegionRepositoryError>
   > {
@@ -253,7 +253,7 @@ export class MockRegionRepository implements RegionRepository {
 
   async getFeatured(
     limit: number,
-    userId?: string,
+    _userId?: string,
   ): Promise<Result<RegionWithStats[], RegionRepositoryError>> {
     const regions = Array.from(this.regions.values())
       .filter((r) => r.status === "published")
@@ -408,8 +408,8 @@ export class MockRegionFavoriteRepository implements RegionFavoriteRepository {
   }
 
   async getRegionsWithFavorites(
-    userId: string,
-    limit?: number,
+    _userId: string,
+    _limit?: number,
   ): Promise<Result<RegionWithStats[], RegionRepositoryError>> {
     // This would typically join with regions table
     // For mock, return empty array
@@ -417,7 +417,7 @@ export class MockRegionFavoriteRepository implements RegionFavoriteRepository {
   }
 
   async updateFavoriteCount(
-    regionId: string,
+    _regionId: string,
   ): Promise<Result<void, RegionRepositoryError>> {
     // In real implementation, this would update the region's favorite count
     return ok(undefined);
@@ -531,7 +531,7 @@ export class MockRegionPinRepository implements RegionPinRepository {
   }
 
   async getRegionsWithPins(
-    userId: string,
+    _userId: string,
   ): Promise<Result<RegionWithStats[], RegionRepositoryError>> {
     // This would typically join with regions table
     // For mock, return empty array

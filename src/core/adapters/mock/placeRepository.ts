@@ -515,8 +515,8 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
   }
 
   async getPlacesWithFavorites(
-    userId: string,
-    limit?: number,
+    _userId: string,
+    _limit?: number,
   ): Promise<Result<PlaceWithStats[], PlaceRepositoryError>> {
     try {
       // Mock implementation - just return empty array
@@ -529,7 +529,7 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
   }
 
   async updateFavoriteCount(
-    placeId: string,
+    _placeId: string,
   ): Promise<Result<void, PlaceRepositoryError>> {
     try {
       // Mock implementation - no-op
@@ -677,7 +677,7 @@ export class MockPlacePermissionRepository
   }
 
   async getSharedPlaces(
-    userId: string,
+    _userId: string,
   ): Promise<Result<PlaceWithStats[], PlaceRepositoryError>> {
     try {
       // Mock implementation - just return empty array
@@ -765,19 +765,19 @@ export class MockCheckinRepository implements CheckinRepository {
 
       // Return just the basic checkin data
       const {
-        userName,
-        placeName,
-        placeRegionName,
-        placeAddress,
-        placeCoordinates,
-        distanceFromPlace,
-        userAvatar,
-        photos,
+        userName: _userName,
+        placeName: _placeName,
+        placeRegionName: _placeRegionName,
+        placeAddress: _placeAddress,
+        placeCoordinates: _placeCoordinates,
+        distanceFromPlace: _distanceFromPlace,
+        userAvatar: _userAvatar,
+        photos: _photos,
         ...basicCheckin
       } = updatedCheckin;
       return ok({
         ...basicCheckin,
-        photos: photos?.map((p) => p.url) || [],
+        photos: _photos?.map((p) => p.url) || [],
       });
     } catch (error) {
       return err(new CheckinRepositoryError("Failed to update checkin", error));
@@ -799,19 +799,19 @@ export class MockCheckinRepository implements CheckinRepository {
 
       // Return just the basic checkin data
       const {
-        userName,
-        placeName,
-        placeRegionName,
-        placeAddress,
-        placeCoordinates,
-        photos,
-        distanceFromPlace,
-        userAvatar,
+        userName: _userName,
+        placeName: _placeName,
+        placeRegionName: _placeRegionName,
+        placeAddress: _placeAddress,
+        placeCoordinates: _placeCoordinates,
+        photos: _photos,
+        distanceFromPlace: _distanceFromPlace,
+        userAvatar: _userAvatar,
         ...basicCheckin
       } = this.checkins[checkinIndex];
       return ok({
         ...basicCheckin,
-        photos: photos?.map((p) => p.url) || [],
+        photos: _photos?.map((p) => p.url) || [],
       });
     } catch (error) {
       return err(

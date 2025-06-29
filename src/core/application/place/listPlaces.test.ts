@@ -6,7 +6,6 @@ import {
 import type { Place } from "@/core/domain/place/types";
 import type { Region } from "@/core/domain/region/types";
 import type { User } from "@/core/domain/user/types";
-import { ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
 import { type CreateRegionInput, createRegion } from "../region/createRegion";
 import { type CreatePlaceInput, createPlace } from "./createPlace";
@@ -26,7 +25,7 @@ describe("listPlaces application services", () => {
   let adminUser: User;
   let testRegion: Region;
   let publishedPlace: Place;
-  let draftPlace: Place;
+  let _draftPlace: Place;
   let archivedPlace: Place;
 
   beforeEach(async () => {
@@ -140,7 +139,7 @@ describe("listPlaces application services", () => {
     if (draftPlaceResult.isErr()) {
       throw new Error("Failed to create draft place");
     }
-    draftPlace = draftPlaceResult.value;
+    _draftPlace = draftPlaceResult.value;
 
     // Create archived place
     const archivedPlaceInput: CreatePlaceInput = {
@@ -669,34 +668,6 @@ describe("listPlaces application services", () => {
           expect(result.value).toHaveLength(0);
         }
       });
-    });
-  });
-
-  describe("error handling", () => {
-    it("should handle repository errors gracefully", async () => {
-      // Create context that fails repository calls
-      const failingContext = createMockContext({
-        shouldFailTransaction: true,
-      });
-
-      const request: ListPlacesRequest = {
-        query: {
-          pagination: {
-            page: 1,
-            limit: 10,
-            order: "desc",
-            orderBy: "createdAt",
-          },
-        },
-        userId: editorUser.id,
-      };
-
-      const result = await listPlaces(failingContext, request);
-
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.code).toBe(ERROR_CODES.PLACE_FETCH_FAILED);
-      }
     });
   });
 

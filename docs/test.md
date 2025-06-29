@@ -1,6 +1,5 @@
 # Testing
 
-- Create tests that validate formal method models
 - Use `pnpm test` for tests
 - Use `src/core/adapters/mock/${adapter}.ts` to create mock implementations of external services for testing
 

@@ -83,8 +83,8 @@ describe("password reset functionality", () => {
           expect(tokenResult.isOk()).toBe(true);
           if (tokenResult.isOk()) {
             expect(tokenResult.value).toBeDefined();
-            expect(tokenResult.value!.userId).toBe(testUser.id);
-            expect(tokenResult.value!.expiresAt.getTime()).toBeGreaterThan(
+            expect(tokenResult.value?.userId).toBe(testUser.id);
+            expect(tokenResult.value?.expiresAt.getTime()).toBeGreaterThan(
               Date.now(),
             );
           }
@@ -187,7 +187,9 @@ describe("password reset functionality", () => {
       const emailService = context.emailService as MockEmailService;
       const lastEmail = emailService.getLastSentEmail();
       expect(lastEmail?.token).toBeDefined();
-      resetToken = lastEmail!.token!;
+      if (lastEmail?.token) {
+        resetToken = lastEmail.token;
+      }
     });
 
     describe("successful password reset", () => {
@@ -435,7 +437,10 @@ describe("password reset functionality", () => {
 
       const emailService = context.emailService as MockEmailService;
       const lastEmail = emailService.getLastSentEmail();
-      const token = lastEmail!.token!;
+      const token = lastEmail?.token;
+      if (!token) {
+        throw new Error("Token not found in test");
+      }
 
       // First reset
       const firstReset = await resetPassword(context, {
@@ -471,8 +476,11 @@ describe("password reset functionality", () => {
       expect(sentEmails).toHaveLength(2);
 
       // Both tokens should be valid
-      const token1 = sentEmails[0].token!;
-      const token2 = sentEmails[1].token!;
+      const token1 = sentEmails[0].token;
+      const token2 = sentEmails[1].token;
+      if (!token1 || !token2) {
+        throw new Error("Tokens not found in test");
+      }
 
       const token1Result =
         await context.passwordResetTokenRepository.findByToken(token1);

@@ -1,4 +1,4 @@
-import { err, ok, type Result } from "neverthrow";
+import { ok, type Result } from "neverthrow";
 import type {
   AuthServiceError,
   PasswordHasher,
@@ -28,28 +28,26 @@ export class MockPasswordHasher implements PasswordHasher {
 }
 
 export class MockTokenGenerator implements TokenGenerator {
-  private tokenCounter = 1;
-
   async generateSessionToken(): Promise<Result<string, AuthServiceError>> {
-    const token = `session_token_${this.tokenCounter++}`;
+    const token = `session_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     return ok(token);
   }
 
   async generatePasswordResetToken(): Promise<
     Result<string, AuthServiceError>
   > {
-    const token = `reset_token_${this.tokenCounter++}`;
+    const token = `reset_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     return ok(token);
   }
 
   async generateEmailVerificationToken(): Promise<
     Result<string, AuthServiceError>
   > {
-    const token = `verification_token_${this.tokenCounter++}`;
+    const token = `verification_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     return ok(token);
   }
 
   reset(): void {
-    this.tokenCounter = 1;
+    // No internal state to reset
   }
 }

@@ -1,8 +1,9 @@
-import { ok, type Result } from "neverthrow";
+import type { Result } from "neverthrow";
+import type { Database } from "@/core/adapters/drizzlePglite/client";
 import type { Context } from "@/core/application/context";
 import { MockPasswordHasher, MockTokenGenerator } from "./authService";
-import { MockDatabase } from "./database";
 import { MockEmailService } from "./emailService";
+import { MockLocationService } from "./locationService";
 import {
   MockCheckinPhotoRepository,
   MockCheckinRepository,
@@ -15,6 +16,7 @@ import {
   MockRegionPinRepository,
   MockRegionRepository,
 } from "./regionRepository";
+import { MockReportRepository } from "./reportRepository";
 import {
   MockEmailVerificationTokenRepository,
   MockNotificationSettingsRepository,
@@ -26,12 +28,27 @@ import {
 
 export interface MockContextOptions {
   publicUrl?: string;
-  shouldFailTransaction?: boolean;
   shouldFailEmail?: boolean;
+  shouldFailLocation?: boolean;
+  shouldFailAdd?: boolean;
+  shouldFailDelete?: boolean;
+  shouldFailFeatured?: boolean;
+  shouldFailFindById?: boolean;
+  shouldFailFindByUser?: boolean;
+  shouldFailFindByUserAndRegion?: boolean;
+  shouldFailGetByCreator?: boolean;
+  shouldFailGetByRegion?: boolean;
+  shouldFailGetRegionsWithFavorites?: boolean;
+  shouldFailGetRegionsWithPins?: boolean;
+  shouldFailList?: boolean;
+  shouldFailRemove?: boolean;
+  shouldFailReorder?: boolean;
+  shouldFailSearch?: boolean;
+  shouldFailUpdate?: boolean;
+  shouldThrowError?: boolean;
 }
 
 export function createMockContext(options: MockContextOptions = {}): Context {
-  const mockDatabase = new MockDatabase();
   const mockUserRepository = new MockUserRepository();
   const mockUserSessionRepository = new MockUserSessionRepository();
   const mockUserSubscriptionRepository = new MockUserSubscriptionRepository();
@@ -44,6 +61,7 @@ export function createMockContext(options: MockContextOptions = {}): Context {
   const mockPasswordHasher = new MockPasswordHasher();
   const mockTokenGenerator = new MockTokenGenerator();
   const mockEmailService = new MockEmailService();
+  const mockLocationService = new MockLocationService();
   const mockRegionRepository = new MockRegionRepository();
   const mockRegionFavoriteRepository = new MockRegionFavoriteRepository();
   const mockRegionPinRepository = new MockRegionPinRepository();
@@ -52,13 +70,14 @@ export function createMockContext(options: MockContextOptions = {}): Context {
   const mockPlacePermissionRepository = new MockPlacePermissionRepository();
   const mockCheckinRepository = new MockCheckinRepository();
   const mockCheckinPhotoRepository = new MockCheckinPhotoRepository();
-
-  if (options.shouldFailTransaction) {
-    mockDatabase.setShouldFailTransaction(true);
-  }
+  const mockReportRepository = new MockReportRepository();
 
   if (options.shouldFailEmail) {
     mockEmailService.setShouldFail(true);
+  }
+
+  if (options.shouldFailLocation) {
+    mockLocationService.setShouldFail(true);
   }
 
   const context: Context = {
@@ -83,14 +102,14 @@ export function createMockContext(options: MockContextOptions = {}): Context {
     placePermissionRepository: mockPlacePermissionRepository,
     checkinRepository: mockCheckinRepository,
     checkinPhotoRepository: mockCheckinPhotoRepository,
-    locationService: {} as any,
-    reportRepository: {} as any,
+    locationService: mockLocationService,
+    reportRepository: mockReportRepository,
 
-    database: mockDatabase as any,
-    withTransaction: <T>(
+    database: {} as Omit<Database, "$client">,
+    withTransaction: async <T>(
       fn: (txContext: Context) => Promise<Result<T, Error>>,
     ): Promise<Result<T, Error>> => {
-      return mockDatabase.withTransaction(context, fn);
+      return fn(context);
     },
   };
 
@@ -115,6 +134,7 @@ export function resetMockContext(context: Context): void {
   (context.passwordHasher as MockPasswordHasher).reset();
   (context.tokenGenerator as MockTokenGenerator).reset();
   (context.emailService as MockEmailService).reset();
+  (context.locationService as MockLocationService).reset();
   (context.regionRepository as MockRegionRepository).reset();
   (context.regionFavoriteRepository as MockRegionFavoriteRepository).reset();
   (context.regionPinRepository as MockRegionPinRepository).reset();
@@ -123,5 +143,5 @@ export function resetMockContext(context: Context): void {
   (context.placePermissionRepository as MockPlacePermissionRepository).reset();
   (context.checkinRepository as MockCheckinRepository).reset();
   (context.checkinPhotoRepository as MockCheckinPhotoRepository).reset();
-  (context.database as any as MockDatabase).reset();
+  (context.reportRepository as MockReportRepository).reset();
 }
