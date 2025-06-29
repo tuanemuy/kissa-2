@@ -6,6 +6,8 @@ import type {
   ListUsersQuery,
   NotificationSettings,
   PasswordResetToken,
+  SubscriptionPlan,
+  SubscriptionStatus,
   UpdateUserProfileParams,
   User,
   UserRole,
@@ -84,6 +86,33 @@ export interface UserSubscriptionRepository {
   ): Promise<Result<UserSubscription, UserRepositoryError>>;
 
   cancel(id: string): Promise<Result<UserSubscription, UserRepositoryError>>;
+
+  list(query: {
+    pagination: {
+      page: number;
+      limit: number;
+      order: "asc" | "desc";
+      orderBy: "createdAt" | "updatedAt";
+    };
+    filter: {
+      status?: SubscriptionStatus;
+      plan?: SubscriptionPlan;
+      dateRange?: {
+        from: Date;
+        to: Date;
+      };
+    };
+  }): Promise<
+    Result<{ items: UserSubscription[]; count: number }, UserRepositoryError>
+  >;
+
+  countByStatus(): Promise<
+    Result<Record<SubscriptionStatus, number>, UserRepositoryError>
+  >;
+
+  countByPlan(): Promise<
+    Result<Record<SubscriptionPlan, number>, UserRepositoryError>
+  >;
 }
 
 export interface NotificationSettingsRepository {

@@ -31,6 +31,27 @@ export async function updateSubscription(
   input: UpdateSubscriptionInput,
 ): Promise<Result<UserSubscription, UpdateSubscriptionError>> {
   try {
+    // Verify user exists first
+    const userResult = await context.userRepository.findById(userId);
+    if (userResult.isErr()) {
+      return err(
+        new UpdateSubscriptionError(
+          "Failed to find user",
+          ERROR_CODES.INTERNAL_ERROR,
+          userResult.error,
+        ),
+      );
+    }
+
+    if (!userResult.value) {
+      return err(
+        new UpdateSubscriptionError(
+          "User not found",
+          ERROR_CODES.USER_NOT_FOUND,
+        ),
+      );
+    }
+
     // Find existing subscription
     const subscriptionResult =
       await context.userSubscriptionRepository.findByUserId(userId);
@@ -109,6 +130,27 @@ export async function cancelSubscription(
   cancelImmediately = false,
 ): Promise<Result<UserSubscription, UpdateSubscriptionError>> {
   try {
+    // Verify user exists first
+    const userResult = await context.userRepository.findById(userId);
+    if (userResult.isErr()) {
+      return err(
+        new UpdateSubscriptionError(
+          "Failed to find user",
+          ERROR_CODES.INTERNAL_ERROR,
+          userResult.error,
+        ),
+      );
+    }
+
+    if (!userResult.value) {
+      return err(
+        new UpdateSubscriptionError(
+          "User not found",
+          ERROR_CODES.USER_NOT_FOUND,
+        ),
+      );
+    }
+
     // Find existing subscription
     const subscriptionResult =
       await context.userSubscriptionRepository.findByUserId(userId);
@@ -181,6 +223,27 @@ export async function renewSubscription(
   periodLengthDays = 30,
 ): Promise<Result<UserSubscription, UpdateSubscriptionError>> {
   try {
+    // Verify user exists first
+    const userResult = await context.userRepository.findById(userId);
+    if (userResult.isErr()) {
+      return err(
+        new UpdateSubscriptionError(
+          "Failed to find user",
+          ERROR_CODES.INTERNAL_ERROR,
+          userResult.error,
+        ),
+      );
+    }
+
+    if (!userResult.value) {
+      return err(
+        new UpdateSubscriptionError(
+          "User not found",
+          ERROR_CODES.USER_NOT_FOUND,
+        ),
+      );
+    }
+
     // Find existing subscription
     const subscriptionResult =
       await context.userSubscriptionRepository.findByUserId(userId);

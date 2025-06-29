@@ -39,7 +39,10 @@ export async function listRegions(
     const { query, userId } = request;
 
     // If no user is provided, only show published regions
-    if (!userId && query.filter) {
+    if (!userId) {
+      if (!query.filter) {
+        query.filter = {};
+      }
       query.filter.status = "published";
     }
 

@@ -36,7 +36,7 @@ export async function createReport(
       return err(
         new CreateReportError(
           "Failed to find reporter user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );
@@ -141,6 +141,20 @@ export async function createReport(
     });
 
     if (reportResult.isErr()) {
+      // Check if this is a duplicate report error from the repository
+      if (
+        reportResult.error.code === "REPORT_ALREADY_EXISTS" ||
+        reportResult.error.message?.includes("already exists")
+      ) {
+        return err(
+          new CreateReportError(
+            "You have already reported this content",
+            ERROR_CODES.REPORT_ALREADY_EXISTS,
+            reportResult.error,
+          ),
+        );
+      }
+
       return err(
         new CreateReportError(
           "Failed to create report",
@@ -174,8 +188,8 @@ async function verifyEntityExists(
         if (result.isErr()) {
           return err(
             new CreateReportError(
-              "Failed to verify user exists",
-              ERROR_CODES.INTERNAL_ERROR,
+              "Failed to verify entity exists",
+              ERROR_CODES.NOT_FOUND,
               result.error,
             ),
           );
@@ -187,8 +201,8 @@ async function verifyEntityExists(
         if (result.isErr()) {
           return err(
             new CreateReportError(
-              "Failed to verify place exists",
-              ERROR_CODES.INTERNAL_ERROR,
+              "Failed to verify entity exists",
+              ERROR_CODES.NOT_FOUND,
               result.error,
             ),
           );
@@ -200,8 +214,8 @@ async function verifyEntityExists(
         if (result.isErr()) {
           return err(
             new CreateReportError(
-              "Failed to verify region exists",
-              ERROR_CODES.INTERNAL_ERROR,
+              "Failed to verify entity exists",
+              ERROR_CODES.NOT_FOUND,
               result.error,
             ),
           );
@@ -213,8 +227,8 @@ async function verifyEntityExists(
         if (result.isErr()) {
           return err(
             new CreateReportError(
-              "Failed to verify checkin exists",
-              ERROR_CODES.INTERNAL_ERROR,
+              "Failed to verify entity exists",
+              ERROR_CODES.NOT_FOUND,
               result.error,
             ),
           );
@@ -270,7 +284,7 @@ async function checkIfOwnContent(
           return err(
             new CreateReportError(
               "Failed to check region ownership",
-              ERROR_CODES.INTERNAL_ERROR,
+              ERROR_CODES.REGION_NOT_FOUND,
               result.error,
             ),
           );

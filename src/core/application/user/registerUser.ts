@@ -69,6 +69,10 @@ export async function registerUser(
         });
 
         if (createResult.isErr()) {
+          // Check if it's an email already exists error and preserve the original message
+          if (createResult.error.message === "Email already exists") {
+            return err(new RegisterUserError("Email is already in use"));
+          }
           return err(
             new RegisterUserError("Failed to create user", createResult.error),
           );
@@ -121,6 +125,10 @@ export async function registerUser(
     );
 
     if (transactionResult.isErr()) {
+      // If the error is already a RegisterUserError with a specific message, preserve it
+      if (transactionResult.error instanceof RegisterUserError) {
+        return err(transactionResult.error);
+      }
       return err(
         new RegisterUserError(
           "Transaction failed during user registration",

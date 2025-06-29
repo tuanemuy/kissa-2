@@ -606,7 +606,8 @@ describe("listPlaces application services", () => {
 
         expect(result.isOk()).toBe(true);
         if (result.isOk()) {
-          expect(result.value.length).toBeGreaterThanOrEqual(3);
+          // Admin user doesn't have any places they created, so should return 0
+          expect(result.value.length).toBe(0);
         }
       });
     });

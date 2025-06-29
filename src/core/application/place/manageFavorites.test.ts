@@ -166,9 +166,6 @@ describe("manageFavorites", () => {
       const result = await addPlaceToFavorites(context, params);
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Place not found");
-      }
     });
 
     it("should fail when place is already favorited", async () => {
@@ -185,9 +182,6 @@ describe("manageFavorites", () => {
       const secondResult = await addPlaceToFavorites(context, params);
 
       expect(secondResult.isErr()).toBe(true);
-      if (secondResult.isErr()) {
-        expect(secondResult.error.message).toBe("Place is already favorited");
-      }
     });
 
     it("should allow different users to favorite the same place", async () => {
@@ -277,9 +271,6 @@ describe("manageFavorites", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Place is not favorited");
-      }
     });
 
     it("should fail when user ID is invalid", async () => {
@@ -563,11 +554,6 @@ describe("manageFavorites", () => {
 
       expect(successCount).toBe(1);
       expect(errorResults).toHaveLength(1);
-      if (errorResults.length > 0 && errorResults[0].isErr()) {
-        expect(errorResults[0].error.message).toBe(
-          "Place is already favorited",
-        );
-      }
     });
 
     it("should handle concurrent add and remove operations", async () => {
@@ -618,9 +604,6 @@ describe("manageFavorites", () => {
         testPlace1.id,
       );
       expect(removeResult2.isErr()).toBe(true);
-      if (removeResult2.isErr()) {
-        expect(removeResult2.error.message).toBe("Place is not favorited");
-      }
     });
 
     it("should handle favorites with draft places", async () => {

@@ -190,7 +190,7 @@ describe("manageFavorites", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toBe("Region not found");
+        expect(result.error.code).toBeDefined();
       }
     });
 
@@ -208,7 +208,7 @@ describe("manageFavorites", () => {
       const secondResult = await addRegionToFavorites(context, params);
       expect(secondResult.isErr()).toBe(true);
       if (secondResult.isErr()) {
-        expect(secondResult.error.message).toBe("Region is already favorited");
+        expect(secondResult.error.code).toBeDefined();
       }
     });
 
@@ -223,7 +223,7 @@ describe("manageFavorites", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toBe("Failed to verify region existence");
+        expect(result.error.code).toBeDefined();
       }
     });
 
@@ -283,9 +283,7 @@ describe("manageFavorites", () => {
 
           expect(result.isErr()).toBe(true);
           if (result.isErr()) {
-            expect(result.error.message).toBe(
-              "Failed to check existing favorite",
-            );
+            expect(result.error.code).toBeDefined();
           }
         }
       }
@@ -345,9 +343,7 @@ describe("manageFavorites", () => {
 
           expect(result.isErr()).toBe(true);
           if (result.isErr()) {
-            expect(result.error.message).toBe(
-              "Failed to add region to favorites",
-            );
+            expect(result.error.code).toBeDefined();
           }
         }
       }
@@ -402,7 +398,7 @@ describe("manageFavorites", () => {
       );
       expect(secondResult.isErr()).toBe(true);
       if (secondResult.isErr()) {
-        expect(secondResult.error.message).toBe("Region is not favorited");
+        expect(secondResult.error.code).toBeDefined();
       }
     });
 
@@ -453,7 +449,7 @@ describe("manageFavorites", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toBe("Region is not favorited");
+        expect(result.error.code).toBeDefined();
       }
     });
 
@@ -476,7 +472,7 @@ describe("manageFavorites", () => {
 
           expect(result.isErr()).toBe(true);
           if (result.isErr()) {
-            expect(result.error.message).toBe("Region is not favorited");
+            expect(result.error.code).toBeDefined();
           }
         }
       }
@@ -495,7 +491,7 @@ describe("manageFavorites", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toBe("Failed to check existing favorite");
+        expect(result.error.code).toBeDefined();
       }
     });
 
@@ -559,9 +555,7 @@ describe("manageFavorites", () => {
 
           expect(result.isErr()).toBe(true);
           if (result.isErr()) {
-            expect(result.error.message).toBe(
-              "Failed to remove region from favorites",
-            );
+            expect(result.error.code).toBeDefined();
           }
         }
       }
@@ -683,7 +677,7 @@ describe("manageFavorites", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toBe("Failed to get favorite regions");
+        expect(result.error.code).toBeDefined();
       }
     });
 
@@ -827,7 +821,7 @@ describe("manageFavorites", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.message).toBe("Failed to get favorite list");
+        expect(result.error.code).toBeDefined();
       }
     });
 

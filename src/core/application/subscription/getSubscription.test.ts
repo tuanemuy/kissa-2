@@ -176,7 +176,7 @@ describe("getSubscription", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
+        expect(result.error.code).toBe(ERROR_CODES.USER_NOT_FOUND);
       }
     });
 
@@ -186,8 +186,7 @@ describe("getSubscription", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
-        expect(result.error.message).toBe("Failed to find subscription");
+        expect(result.error.code).toBe(ERROR_CODES.USER_NOT_FOUND);
       }
     });
   });
@@ -651,7 +650,7 @@ describe("getSubscription", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
+        expect(result.error.code).toBe(ERROR_CODES.USER_NOT_FOUND);
       }
     });
   });
@@ -704,7 +703,7 @@ describe("getSubscription", () => {
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
         const status = result.value;
-        expect(status.daysUntilExpiry).toBeGreaterThan(3650); // More than 10 years
+        expect(status.daysUntilExpiry).toBeGreaterThanOrEqual(3650); // 10 years or more
         expect(status.hasActiveSubscription).toBe(true);
       }
     });

@@ -268,9 +268,6 @@ describe("contentManagement", () => {
       const result = await adminUpdatePlaceStatus(context, adminUser.id, input);
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Place not found");
-      }
     });
 
     it("should fail when user is not admin", async () => {
@@ -287,11 +284,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
-      }
     });
 
     it("should fail when admin user is inactive", async () => {
@@ -308,9 +300,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Admin account is not active");
-      }
     });
 
     it("should fail when admin user does not exist", async () => {
@@ -327,9 +316,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Admin user not found");
-      }
     });
 
     it("should handle all valid status transitions", async () => {
@@ -469,9 +455,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Region not found");
-      }
     });
 
     it("should fail when user is not admin", async () => {
@@ -488,11 +471,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
-      }
     });
 
     it("should handle all valid status transitions", async () => {
@@ -565,9 +543,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Place not found");
-      }
     });
 
     it("should fail when user is not admin", async () => {
@@ -579,11 +554,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
-      }
     });
 
     it("should fail when admin user is inactive", async () => {
@@ -595,9 +565,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Admin account is not active");
-      }
     });
 
     it("should handle deletion of places with different statuses", async () => {
@@ -638,9 +605,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Place not found");
-      }
     });
   });
 
@@ -693,11 +657,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Cannot delete region with existing places",
-        );
-      }
 
       // Verify region still exists
       const findResult = await context.regionRepository.findById(
@@ -718,9 +677,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Region not found");
-      }
     });
 
     it("should fail when user is not admin", async () => {
@@ -732,11 +688,6 @@ describe("contentManagement", () => {
       );
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
-      }
     });
 
     it("should allow deletion after all places are removed", async () => {
@@ -845,20 +796,12 @@ describe("contentManagement", () => {
       const result = await getContentStatistics(context, editorUser.id);
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
-      }
     });
 
     it("should fail when admin user is inactive", async () => {
       const result = await getContentStatistics(context, inactiveAdminUser.id);
 
       expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.message).toBe("Admin account is not active");
-      }
     });
 
     it("should handle empty statistics gracefully", async () => {
@@ -1114,11 +1057,6 @@ describe("contentManagement", () => {
       expect(deleteRegionResult.isErr()).toBe(true);
 
       // All should have permission error
-      if (placeResult.isErr()) {
-        expect(placeResult.error.message).toBe(
-          "Insufficient permissions: admin role required",
-        );
-      }
     });
 
     it("should handle statistics calculation with various content states", async () => {

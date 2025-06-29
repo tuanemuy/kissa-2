@@ -22,6 +22,21 @@ export async function getSubscription(
   userId: string,
 ): Promise<Result<UserSubscription | null, GetSubscriptionError>> {
   try {
+    // Verify user ID format and that user exists
+    const userResult = await context.userRepository.findById(userId);
+    if (userResult.isErr()) {
+      return err(
+        new GetSubscriptionError(
+          "Failed to find user",
+          ERROR_CODES.USER_NOT_FOUND,
+          userResult.error,
+        ),
+      );
+    }
+
+    // User can be null (not found) - that's OK for this function
+    // We still look for their subscription
+
     const subscriptionResult =
       await context.userSubscriptionRepository.findByUserId(userId);
     if (subscriptionResult.isErr()) {
@@ -51,6 +66,21 @@ export async function getSubscriptionStatus(
   userId: string,
 ): Promise<Result<SubscriptionStatus, GetSubscriptionError>> {
   try {
+    // Verify user ID format and that user exists
+    const userResult = await context.userRepository.findById(userId);
+    if (userResult.isErr()) {
+      return err(
+        new GetSubscriptionError(
+          "Failed to find user",
+          ERROR_CODES.USER_NOT_FOUND,
+          userResult.error,
+        ),
+      );
+    }
+
+    // User can be null (not found) - that's OK for this function
+    // We still look for their subscription status
+
     const subscriptionResult =
       await context.userSubscriptionRepository.findByUserId(userId);
     if (subscriptionResult.isErr()) {

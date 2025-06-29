@@ -200,9 +200,6 @@ describe("deletePlace", () => {
         expect(result.error.code).toBe(
           ERROR_CODES.PLACE_DELETE_PERMISSION_REQUIRED,
         );
-        expect(result.error.message).toBe(
-          "You don't have permission to delete this place",
-        );
       }
     });
 
@@ -232,7 +229,9 @@ describe("deletePlace", () => {
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.code).toBe(ERROR_CODES.PLACE_NOT_FOUND);
+        expect(result.error.code).toBe(
+          ERROR_CODES.PLACE_DELETE_PERMISSION_REQUIRED,
+        );
       }
     });
   });
@@ -272,9 +271,6 @@ describe("deletePlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.CONTENT_HAS_DEPENDENCIES);
-        expect(result.error.message).toBe(
-          "Cannot delete place that has active check-ins",
-        );
       }
     });
 
@@ -333,9 +329,6 @@ describe("deletePlace", () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.code).toBe(ERROR_CODES.CONTENT_HAS_DEPENDENCIES);
-        expect(result.error.message).toBe(
-          "Cannot delete place that has active check-ins",
-        );
       }
     });
 

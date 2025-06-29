@@ -38,9 +38,16 @@ import type {
   UpdatePlaceParams,
 } from "@/core/domain/place/types";
 import type { Coordinates } from "@/core/domain/region/types";
+import type { UserRepository } from "@/core/domain/user/ports/userRepository";
 
 export class MockPlaceRepository implements PlaceRepository {
   private places: Place[] = [];
+  private deletingPlaces = new Set<string>(); // Track places currently being deleted
+  private shouldFailSearch = false;
+  private shouldThrowError = false;
+  private shouldFailDelete = false;
+  private shouldFailGetByRegion = false;
+  private shouldFailFindById = false;
 
   async create(
     createdBy: string,
@@ -84,6 +91,10 @@ export class MockPlaceRepository implements PlaceRepository {
     id: string,
     userId?: string,
   ): Promise<Result<PlaceWithStats | null, PlaceRepositoryError>> {
+    if (this.shouldFailFindById) {
+      return err(new PlaceRepositoryError("Failed to find place by ID"));
+    }
+
     try {
       const place = this.places.find((p) => p.id === id);
       if (!place) {
@@ -113,10 +124,19 @@ export class MockPlaceRepository implements PlaceRepository {
         return err(new PlaceRepositoryError("Place not found"));
       }
 
+      const currentPlace = this.places[placeIndex];
+      // Ensure updatedAt is always greater than the existing timestamps but not too far in the future
+      const updatedAt = new Date(
+        Math.max(
+          currentPlace.createdAt.getTime() + 1,
+          currentPlace.updatedAt.getTime() + 1,
+        ),
+      );
+
       const updatedPlace = {
-        ...this.places[placeIndex],
+        ...currentPlace,
         ...params,
-        updatedAt: new Date(),
+        updatedAt,
       };
 
       this.places[placeIndex] = updatedPlace;
@@ -152,13 +172,29 @@ export class MockPlaceRepository implements PlaceRepository {
 
   async delete(id: string): Promise<Result<void, PlaceRepositoryError>> {
     try {
-      const placeIndex = this.places.findIndex((p) => p.id === id);
-      if (placeIndex === -1) {
+      if (this.shouldFailDelete) {
+        return err(new PlaceRepositoryError("Failed to delete place"));
+      }
+
+      // Mark place as being deleted
+      if (this.deletingPlaces.has(id)) {
         return err(new PlaceRepositoryError("Place not found"));
       }
 
-      this.places.splice(placeIndex, 1);
-      return ok(undefined);
+      this.deletingPlaces.add(id);
+
+      try {
+        const placeIndex = this.places.findIndex((p) => p.id === id);
+        if (placeIndex === -1) {
+          return err(new PlaceRepositoryError("Place not found"));
+        }
+
+        this.places.splice(placeIndex, 1);
+        return ok(undefined);
+      } finally {
+        // Always clean up the deletion tracking
+        this.deletingPlaces.delete(id);
+      }
     } catch (error) {
       return err(new PlaceRepositoryError("Failed to delete place", error));
     }
@@ -197,14 +233,66 @@ export class MockPlaceRepository implements PlaceRepository {
         );
       }
 
-      const items: PlaceWithStats[] = filteredPlaces.map((place) => ({
+      if (query.filter?.keyword) {
+        const keyword = query.filter.keyword.toLowerCase();
+        filteredPlaces = filteredPlaces.filter(
+          (p) =>
+            p.name.toLowerCase().includes(keyword) ||
+            p.description?.toLowerCase().includes(keyword),
+        );
+      }
+
+      // Apply sorting
+      if (query.sort) {
+        const { field, direction } = query.sort;
+        filteredPlaces.sort((a, b) => {
+          const aValue: unknown = a[field as keyof Place];
+          const bValue: unknown = b[field as keyof Place];
+
+          // Handle date sorting
+          if (field === "createdAt" || field === "updatedAt") {
+            const aTime =
+              aValue instanceof Date
+                ? aValue.getTime()
+                : new Date(aValue as string).getTime();
+            const bTime =
+              bValue instanceof Date
+                ? bValue.getTime()
+                : new Date(bValue as string).getTime();
+            return direction === "asc" ? aTime - bTime : bTime - aTime;
+          }
+
+          // Handle string sorting
+          if (typeof aValue === "string" && typeof bValue === "string") {
+            return direction === "asc"
+              ? aValue.localeCompare(bValue)
+              : bValue.localeCompare(aValue);
+          }
+
+          // Handle number sorting
+          if (typeof aValue === "number" && typeof bValue === "number") {
+            return direction === "asc" ? aValue - bValue : bValue - aValue;
+          }
+
+          // Default fallback
+          return 0;
+        });
+      }
+
+      // Apply pagination
+      const count = filteredPlaces.length;
+      const { page, limit } = query.pagination;
+      const offset = (page - 1) * limit;
+      const paginatedPlaces = filteredPlaces.slice(offset, offset + limit);
+
+      const items: PlaceWithStats[] = paginatedPlaces.map((place) => ({
         ...place,
         isFavorited: false,
         hasEditPermission: place.createdBy === userId,
         hasDeletePermission: place.createdBy === userId,
       }));
 
-      return ok({ items, count: items.length });
+      return ok({ items, count });
     } catch (error) {
       return err(new PlaceRepositoryError("Failed to list places", error));
     }
@@ -216,10 +304,35 @@ export class MockPlaceRepository implements PlaceRepository {
   ): Promise<
     Result<{ items: PlaceWithStats[]; count: number }, PlaceRepositoryError>
   > {
+    // Simulate unexpected error if configured - throw before try-catch
+    if (this.shouldThrowError) {
+      throw new Error("Simulated unexpected error");
+    }
+
     try {
-      let filteredPlaces = this.places.filter((place) =>
-        place.name.toLowerCase().includes(query.keyword.toLowerCase()),
-      );
+      // Simulate search failure if configured
+      if (this.shouldFailSearch) {
+        return err(new PlaceRepositoryError("Failed to search places"));
+      }
+      const keyword = query.keyword.toLowerCase();
+
+      // Start with all places if wildcard or empty keyword
+      let filteredPlaces = this.places;
+
+      // Apply keyword filtering if not wildcard
+      if (keyword && keyword !== "*") {
+        filteredPlaces = filteredPlaces.filter((place) => {
+          const nameMatch = place.name.toLowerCase().includes(keyword);
+          const descriptionMatch =
+            place.description?.toLowerCase().includes(keyword) || false;
+          const tagsMatch = place.tags.some((tag) =>
+            tag.toLowerCase().includes(keyword),
+          );
+          const categoryMatch = place.category.toLowerCase().includes(keyword);
+
+          return nameMatch || descriptionMatch || tagsMatch || categoryMatch;
+        });
+      }
 
       if (query.regionId) {
         filteredPlaces = filteredPlaces.filter(
@@ -233,25 +346,81 @@ export class MockPlaceRepository implements PlaceRepository {
         );
       }
 
-      const items: PlaceWithStats[] = filteredPlaces.map((place) => ({
+      // If no user is provided, only show published places
+      if (!userId) {
+        filteredPlaces = filteredPlaces.filter((p) => p.status === "published");
+      }
+
+      // Apply location-based filtering if provided
+      if (query.location) {
+        const { coordinates, radiusKm } = query.location;
+        filteredPlaces = filteredPlaces.filter((place) => {
+          const distance = this.calculateDistance(
+            coordinates,
+            place.coordinates,
+          );
+          return distance <= radiusKm;
+        });
+      }
+
+      // Apply pagination
+      const totalCount = filteredPlaces.length;
+      const { page, limit } = query.pagination;
+      const offset = (page - 1) * limit;
+      const paginatedPlaces = filteredPlaces.slice(offset, offset + limit);
+
+      const items: PlaceWithStats[] = paginatedPlaces.map((place) => ({
         ...place,
         isFavorited: false,
         hasEditPermission: place.createdBy === userId,
         hasDeletePermission: place.createdBy === userId,
       }));
 
-      return ok({ items, count: items.length });
+      return ok({ items, count: totalCount });
     } catch (error) {
       return err(new PlaceRepositoryError("Failed to search places", error));
     }
+  }
+
+  // Helper method to calculate distance between two coordinates
+  private calculateDistance(
+    coord1: { latitude: number; longitude: number },
+    coord2: { latitude: number; longitude: number },
+  ): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
+    const dLon = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((coord1.latitude * Math.PI) / 180) *
+        Math.cos((coord2.latitude * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
   async getByRegion(
     regionId: string,
     userId?: string,
   ): Promise<Result<PlaceWithStats[], PlaceRepositoryError>> {
+    // Simulate unexpected error if configured - throw before try-catch
+    if (this.shouldThrowError) {
+      throw new Error("Simulated unexpected error");
+    }
+
     try {
-      const filteredPlaces = this.places.filter((p) => p.regionId === regionId);
+      if (this.shouldFailGetByRegion) {
+        return err(new PlaceRepositoryError("Failed to get places by region"));
+      }
+
+      let filteredPlaces = this.places.filter((p) => p.regionId === regionId);
+
+      // If no user is provided, only show published places
+      if (!userId) {
+        filteredPlaces = filteredPlaces.filter((p) => p.status === "published");
+      }
+
       const items: PlaceWithStats[] = filteredPlaces.map((place) => ({
         ...place,
         isFavorited: false,
@@ -290,7 +459,9 @@ export class MockPlaceRepository implements PlaceRepository {
     userId: string,
   ): Promise<Result<PlaceWithStats[], PlaceRepositoryError>> {
     try {
-      // For mock, just return places created by user
+      // For mock, return places created by user. In real implementation, this would
+      // also include places where user has been granted permissions.
+      // Admin users typically have access to all places.
       const filteredPlaces = this.places.filter((p) => p.createdBy === userId);
       const items: PlaceWithStats[] = filteredPlaces.map((place) => ({
         ...place,
@@ -319,7 +490,10 @@ export class MockPlaceRepository implements PlaceRepository {
     >
   > {
     try {
-      const filteredPlaces = this.places.filter((p) => p.regionId === regionId);
+      // Only show published places for map locations (public API)
+      const filteredPlaces = this.places.filter(
+        (p) => p.regionId === regionId && p.status === "published",
+      );
       const locations = filteredPlaces.map((place) => ({
         id: place.id,
         name: place.name,
@@ -428,6 +602,11 @@ export class MockPlaceRepository implements PlaceRepository {
     userId: string,
   ): Promise<Result<boolean, PlaceRepositoryError>> {
     try {
+      // Check if place is already being deleted
+      if (this.deletingPlaces.has(id)) {
+        return err(new PlaceRepositoryError("Place not found"));
+      }
+
       const place = this.places.find((p) => p.id === id);
       if (!place) {
         return err(new PlaceRepositoryError("Place not found"));
@@ -442,18 +621,95 @@ export class MockPlaceRepository implements PlaceRepository {
     }
   }
 
+  setShouldFailSearch(shouldFail: boolean): void {
+    this.shouldFailSearch = shouldFail;
+  }
+
+  setShouldThrowError(shouldThrow: boolean): void {
+    this.shouldThrowError = shouldThrow;
+  }
+
   reset(): void {
     this.places = [];
+    this.deletingPlaces.clear();
+    this.shouldFailSearch = false;
+    this.shouldThrowError = false;
+    this.shouldFailDelete = false;
+    this.shouldFailGetByRegion = false;
+    this.shouldFailFindById = false;
+  }
+
+  setShouldFailDelete(shouldFail: boolean): void {
+    this.shouldFailDelete = shouldFail;
+  }
+
+  setShouldFailGetByRegion(shouldFail: boolean): void {
+    this.shouldFailGetByRegion = shouldFail;
+  }
+
+  setShouldFailFindById(shouldFail: boolean): void {
+    this.shouldFailFindById = shouldFail;
   }
 }
 
 export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
   private favorites: PlaceFavorite[] = [];
+  private placeRepository?: MockPlaceRepository;
+  private shouldFailFindByUser = false;
+  private shouldFailFindByUserAndPlace = false;
+  private shouldFailAdd = false;
+  private shouldFailRemove = false;
+  private shouldFailGetPlacesWithFavorites = false;
+
+  setPlaceRepository(placeRepository: MockPlaceRepository): void {
+    this.placeRepository = placeRepository;
+  }
+
+  setShouldFailFindByUser(shouldFail: boolean): void {
+    this.shouldFailFindByUser = shouldFail;
+  }
+
+  setShouldFailFindByUserAndPlace(shouldFail: boolean): void {
+    this.shouldFailFindByUserAndPlace = shouldFail;
+  }
+
+  setShouldFailAdd(shouldFail: boolean): void {
+    this.shouldFailAdd = shouldFail;
+  }
+
+  setShouldFailRemove(shouldFail: boolean): void {
+    this.shouldFailRemove = shouldFail;
+  }
+
+  setShouldFailGetPlacesWithFavorites(shouldFail: boolean): void {
+    this.shouldFailGetPlacesWithFavorites = shouldFail;
+  }
 
   async add(
     params: AddPlaceToFavoritesParams,
   ): Promise<Result<PlaceFavorite, PlaceRepositoryError>> {
+    if (this.shouldFailAdd) {
+      return err(new PlaceRepositoryError("Failed to add favorite"));
+    }
+
     try {
+      // Validate user ID and place ID format (basic UUID validation)
+      if (!params.userId || !params.userId.match(/^[0-9a-f-]{36}$/i)) {
+        return err(new PlaceRepositoryError("Invalid user ID format"));
+      }
+
+      if (!params.placeId || !params.placeId.match(/^[0-9a-f-]{36}$/i)) {
+        return err(new PlaceRepositoryError("Invalid place ID format"));
+      }
+
+      // Check if already favorited (duplicate check)
+      const existingFavorite = this.favorites.find(
+        (f) => f.userId === params.userId && f.placeId === params.placeId,
+      );
+      if (existingFavorite) {
+        return err(new PlaceRepositoryError("Place is already favorited"));
+      }
+
       const favorite: PlaceFavorite = {
         id: uuidv4(),
         userId: params.userId,
@@ -472,6 +728,10 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
     userId: string,
     placeId: string,
   ): Promise<Result<void, PlaceRepositoryError>> {
+    if (this.shouldFailRemove) {
+      return err(new PlaceRepositoryError("Failed to remove favorite"));
+    }
+
     try {
       const index = this.favorites.findIndex(
         (f) => f.userId === userId && f.placeId === placeId,
@@ -490,8 +750,21 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
   async findByUser(
     userId: string,
   ): Promise<Result<PlaceFavorite[], PlaceRepositoryError>> {
+    if (this.shouldFailFindByUser) {
+      return err(new PlaceRepositoryError("Failed to find favorites by user"));
+    }
+
     try {
+      // Validate user ID format
+      if (!userId || !userId.match(/^[0-9a-f-]{36}$/i)) {
+        return err(new PlaceRepositoryError("Invalid user ID format"));
+      }
+
       const userFavorites = this.favorites.filter((f) => f.userId === userId);
+      // Sort by creation date (most recent first) for consistent ordering
+      userFavorites.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
       return ok(userFavorites);
     } catch (error) {
       return err(
@@ -504,6 +777,12 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
     userId: string,
     placeId: string,
   ): Promise<Result<PlaceFavorite | null, PlaceRepositoryError>> {
+    if (this.shouldFailFindByUserAndPlace) {
+      return err(
+        new PlaceRepositoryError("Failed to find favorite by user and place"),
+      );
+    }
+
     try {
       const favorite = this.favorites.find(
         (f) => f.userId === userId && f.placeId === placeId,
@@ -515,12 +794,56 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
   }
 
   async getPlacesWithFavorites(
-    _userId: string,
-    _limit?: number,
+    userId: string,
+    limit?: number,
   ): Promise<Result<PlaceWithStats[], PlaceRepositoryError>> {
+    if (this.shouldFailGetPlacesWithFavorites) {
+      return err(
+        new PlaceRepositoryError("Failed to get places with favorites"),
+      );
+    }
+
     try {
-      // Mock implementation - just return empty array
-      return ok([]);
+      // Validate user ID format
+      if (!userId || !userId.match(/^[0-9a-f-]{36}$/i)) {
+        return err(new PlaceRepositoryError("Invalid user ID format"));
+      }
+
+      // Get user's favorites
+      const userFavorites = this.favorites.filter((f) => f.userId === userId);
+
+      // Sort by creation date (most recent first)
+      userFavorites.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+
+      // Apply limit if specified
+      const limitedFavorites =
+        limit && limit > 0
+          ? userFavorites.slice(0, limit)
+          : limit === 0
+            ? []
+            : userFavorites;
+
+      // Get the corresponding places
+      const placesWithStats: PlaceWithStats[] = [];
+
+      if (this.placeRepository) {
+        for (const favorite of limitedFavorites) {
+          const placeResult = await this.placeRepository.findById(
+            favorite.placeId,
+            userId,
+          );
+          if (placeResult.isOk() && placeResult.value) {
+            placesWithStats.push({
+              ...placeResult.value,
+              isFavorited: true, // Mark as favorited since this is a favorites query
+            });
+          }
+        }
+      }
+
+      return ok(placesWithStats);
     } catch (error) {
       return err(
         new PlaceRepositoryError("Failed to get places with favorites", error),
@@ -543,6 +866,11 @@ export class MockPlaceFavoriteRepository implements PlaceFavoriteRepository {
 
   reset(): void {
     this.favorites = [];
+    this.shouldFailFindByUser = false;
+    this.shouldFailFindByUserAndPlace = false;
+    this.shouldFailAdd = false;
+    this.shouldFailRemove = false;
+    this.shouldFailGetPlacesWithFavorites = false;
   }
 }
 
@@ -550,16 +878,54 @@ export class MockPlacePermissionRepository
   implements PlacePermissionRepository
 {
   private permissions: PlacePermission[] = [];
+  private userRepository?: UserRepository;
+  private placeRepository?: MockPlaceRepository;
+
+  setUserRepository(userRepository: UserRepository): void {
+    this.userRepository = userRepository;
+  }
 
   async invite(
     invitedBy: string,
     params: InviteEditorParams,
   ): Promise<Result<PlacePermission, PlaceRepositoryError>> {
     try {
+      if (!this.userRepository) {
+        return err(new PlaceRepositoryError("UserRepository not set"));
+      }
+
+      // Find user by email to get the correct userId
+      const userResult = await this.userRepository.findByEmail(params.email);
+      if (userResult.isErr()) {
+        return err(
+          new PlaceRepositoryError(
+            "Failed to find user by email",
+            userResult.error,
+          ),
+        );
+      }
+
+      const user = userResult.value;
+      if (!user) {
+        return err(new PlaceRepositoryError("User not found"));
+      }
+
+      // Check if user already has permission for this place (duplicate check)
+      const existingPermission = this.permissions.find(
+        (p) => p.userId === user.id && p.placeId === params.placeId,
+      );
+      if (existingPermission) {
+        return err(
+          new PlaceRepositoryError(
+            "User already has permission for this place",
+          ),
+        );
+      }
+
       const permission: PlacePermission = {
         id: uuidv4(),
         placeId: params.placeId,
-        userId: uuidv4(), // Mock user ID
+        userId: user.id, // Use the actual user ID
         canEdit: params.canEdit,
         canDelete: params.canDelete,
         invitedBy,
@@ -677,16 +1043,45 @@ export class MockPlacePermissionRepository
   }
 
   async getSharedPlaces(
-    _userId: string,
+    userId: string,
   ): Promise<Result<PlaceWithStats[], PlaceRepositoryError>> {
     try {
-      // Mock implementation - just return empty array
-      return ok([]);
+      if (!this.placeRepository) {
+        return err(new PlaceRepositoryError("PlaceRepository not set"));
+      }
+
+      // Find all permissions for the user
+      const userPermissions = this.permissions.filter(
+        (p) => p.userId === userId && p.acceptedAt, // Only accepted permissions
+      );
+
+      const places: PlaceWithStats[] = [];
+
+      // For each permission, get the place
+      for (const permission of userPermissions) {
+        const placeResult = await this.placeRepository.findById(
+          permission.placeId,
+          userId,
+        );
+        if (placeResult.isOk() && placeResult.value) {
+          places.push({
+            ...placeResult.value,
+            hasEditPermission: permission.canEdit,
+            hasDeletePermission: permission.canDelete,
+          });
+        }
+      }
+
+      return ok(places);
     } catch (error) {
       return err(
         new PlaceRepositoryError("Failed to get shared places", error),
       );
     }
+  }
+
+  setPlaceRepository(placeRepository: MockPlaceRepository): void {
+    this.placeRepository = placeRepository;
   }
 
   reset(): void {

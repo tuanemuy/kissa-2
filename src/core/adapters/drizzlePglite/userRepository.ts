@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, like, lte, sql } from "drizzle-orm";
 import { err, ok, type Result } from "neverthrow";
 import {
   type EmailVerificationTokenRepository,
@@ -15,6 +15,8 @@ import type {
   ListUsersQuery,
   NotificationSettings,
   PasswordResetToken,
+  SubscriptionPlan,
+  SubscriptionStatus,
   UpdateUserProfileParams,
   User,
   UserRole,
@@ -533,6 +535,172 @@ export class DrizzlePgliteUserSubscriptionRepository
       return err(
         new UserRepositoryError(
           "Failed to cancel user subscription",
+          undefined,
+          error,
+        ),
+      );
+    }
+  }
+
+  async list(query: {
+    pagination: {
+      page: number;
+      limit: number;
+      order: "asc" | "desc";
+      orderBy: "createdAt" | "updatedAt";
+    };
+    filter: {
+      status?: SubscriptionStatus;
+      plan?: SubscriptionPlan;
+      dateRange?: {
+        from: Date;
+        to: Date;
+      };
+    };
+  }): Promise<
+    Result<{ items: UserSubscription[]; count: number }, UserRepositoryError>
+  > {
+    try {
+      const conditions = [];
+
+      if (query.filter.status) {
+        conditions.push(eq(userSubscriptions.status, query.filter.status));
+      }
+
+      if (query.filter.plan) {
+        conditions.push(eq(userSubscriptions.plan, query.filter.plan));
+      }
+
+      if (query.filter.dateRange) {
+        conditions.push(
+          gte(userSubscriptions.createdAt, query.filter.dateRange.from),
+        );
+        conditions.push(
+          lte(userSubscriptions.createdAt, query.filter.dateRange.to),
+        );
+      }
+
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
+
+      const [items, countResult] = await Promise.all([
+        this.db
+          .select()
+          .from(userSubscriptions)
+          .where(whereClause)
+          .orderBy(
+            query.pagination.order === "desc"
+              ? desc(userSubscriptions[query.pagination.orderBy])
+              : userSubscriptions[query.pagination.orderBy],
+          )
+          .limit(query.pagination.limit)
+          .offset((query.pagination.page - 1) * query.pagination.limit),
+        this.db
+          .select({ count: count() })
+          .from(userSubscriptions)
+          .where(whereClause),
+      ]);
+
+      const validatedItems: UserSubscription[] = [];
+
+      for (const item of items) {
+        const validationResult = validate(userSubscriptionSchema, item).mapErr(
+          (error) => {
+            return new UserRepositoryError(
+              "Invalid subscription data",
+              undefined,
+              error,
+            );
+          },
+        );
+
+        if (validationResult.isErr()) {
+          return err(validationResult.error);
+        }
+
+        validatedItems.push(validationResult.value);
+      }
+
+      const totalCount = countResult[0]?.count ?? 0;
+
+      return ok({
+        items: validatedItems,
+        count: totalCount,
+      });
+    } catch (error) {
+      return err(
+        new UserRepositoryError(
+          "Failed to list user subscriptions",
+          undefined,
+          error,
+        ),
+      );
+    }
+  }
+
+  async countByStatus(): Promise<
+    Result<Record<SubscriptionStatus, number>, UserRepositoryError>
+  > {
+    try {
+      const result = await this.db
+        .select({
+          status: userSubscriptions.status,
+          count: count(),
+        })
+        .from(userSubscriptions)
+        .groupBy(userSubscriptions.status);
+
+      const counts: Record<SubscriptionStatus, number> = {
+        none: 0,
+        trial: 0,
+        active: 0,
+        expired: 0,
+        cancelled: 0,
+      };
+
+      for (const row of result) {
+        counts[row.status as SubscriptionStatus] = row.count;
+      }
+
+      return ok(counts);
+    } catch (error) {
+      return err(
+        new UserRepositoryError(
+          "Failed to count subscriptions by status",
+          undefined,
+          error,
+        ),
+      );
+    }
+  }
+
+  async countByPlan(): Promise<
+    Result<Record<SubscriptionPlan, number>, UserRepositoryError>
+  > {
+    try {
+      const result = await this.db
+        .select({
+          plan: userSubscriptions.plan,
+          count: count(),
+        })
+        .from(userSubscriptions)
+        .groupBy(userSubscriptions.plan);
+
+      const counts: Record<SubscriptionPlan, number> = {
+        free: 0,
+        standard: 0,
+        premium: 0,
+      };
+
+      for (const row of result) {
+        counts[row.plan as SubscriptionPlan] = row.count;
+      }
+
+      return ok(counts);
+    } catch (error) {
+      return err(
+        new UserRepositoryError(
+          "Failed to count subscriptions by plan",
           undefined,
           error,
         ),

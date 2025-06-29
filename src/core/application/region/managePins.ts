@@ -6,14 +6,11 @@ import type {
   ReorderPinnedRegionsParams,
 } from "@/core/domain/region/types";
 import { AnyError } from "@/lib/error";
+import { ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
 
 export class RegionPinApplicationError extends AnyError {
   override readonly name = "RegionPinApplicationError";
-
-  constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
-  }
 }
 
 /**
@@ -23,19 +20,37 @@ export async function pinRegion(
   context: Context,
   params: PinRegionParams,
 ): Promise<Result<RegionPin, RegionPinApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(params.userId) || !uuidRegex.test(params.regionId)) {
+    return err(
+      new RegionPinApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   // Check if region exists
   const regionResult = await context.regionRepository.findById(params.regionId);
   if (regionResult.isErr()) {
     return err(
       new RegionPinApplicationError(
         "Failed to verify region existence",
+        ERROR_CODES.INTERNAL_ERROR,
         regionResult.error,
       ),
     );
   }
 
   if (!regionResult.value) {
-    return err(new RegionPinApplicationError("Region not found"));
+    return err(
+      new RegionPinApplicationError(
+        "Region not found",
+        ERROR_CODES.REGION_NOT_FOUND,
+      ),
+    );
   }
 
   // Check if already pinned
@@ -48,20 +63,30 @@ export async function pinRegion(
     return err(
       new RegionPinApplicationError(
         "Failed to check existing pin",
+        ERROR_CODES.INTERNAL_ERROR,
         existingPinResult.error,
       ),
     );
   }
 
   if (existingPinResult.value) {
-    return err(new RegionPinApplicationError("Region is already pinned"));
+    return err(
+      new RegionPinApplicationError(
+        "Region is already pinned",
+        ERROR_CODES.ALREADY_EXISTS,
+      ),
+    );
   }
 
   // Pin the region
   const pinResult = await context.regionPinRepository.add(params);
   if (pinResult.isErr()) {
     return err(
-      new RegionPinApplicationError("Failed to pin region", pinResult.error),
+      new RegionPinApplicationError(
+        "Failed to pin region",
+        ERROR_CODES.INTERNAL_ERROR,
+        pinResult.error,
+      ),
     );
   }
 
@@ -76,6 +101,18 @@ export async function unpinRegion(
   userId: string,
   regionId: string,
 ): Promise<Result<void, RegionPinApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId) || !uuidRegex.test(regionId)) {
+    return err(
+      new RegionPinApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   // Check if pinned
   const existingPinResult =
     await context.regionPinRepository.findByUserAndRegion(userId, regionId);
@@ -83,13 +120,19 @@ export async function unpinRegion(
     return err(
       new RegionPinApplicationError(
         "Failed to check existing pin",
+        ERROR_CODES.INTERNAL_ERROR,
         existingPinResult.error,
       ),
     );
   }
 
   if (!existingPinResult.value) {
-    return err(new RegionPinApplicationError("Region is not pinned"));
+    return err(
+      new RegionPinApplicationError(
+        "Region is not pinned",
+        ERROR_CODES.NOT_FOUND,
+      ),
+    );
   }
 
   // Remove pin
@@ -101,6 +144,7 @@ export async function unpinRegion(
     return err(
       new RegionPinApplicationError(
         "Failed to unpin region",
+        ERROR_CODES.INTERNAL_ERROR,
         removeResult.error,
       ),
     );
@@ -116,11 +160,24 @@ export async function getUserPinnedRegions(
   context: Context,
   userId: string,
 ): Promise<Result<RegionWithStats[], RegionPinApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    return err(
+      new RegionPinApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   const result = await context.regionPinRepository.getRegionsWithPins(userId);
   if (result.isErr()) {
     return err(
       new RegionPinApplicationError(
         "Failed to get pinned regions",
+        ERROR_CODES.INTERNAL_ERROR,
         result.error,
       ),
     );
@@ -136,10 +193,26 @@ export async function getUserPinList(
   context: Context,
   userId: string,
 ): Promise<Result<RegionPin[], RegionPinApplicationError>> {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    return err(
+      new RegionPinApplicationError(
+        "Invalid UUID format",
+        ERROR_CODES.VALIDATION_ERROR,
+      ),
+    );
+  }
+
   const result = await context.regionPinRepository.findByUser(userId);
   if (result.isErr()) {
     return err(
-      new RegionPinApplicationError("Failed to get pin list", result.error),
+      new RegionPinApplicationError(
+        "Failed to get pin list",
+        ERROR_CODES.INTERNAL_ERROR,
+        result.error,
+      ),
     );
   }
 
@@ -161,6 +234,7 @@ export async function reorderPinnedRegions(
     return err(
       new RegionPinApplicationError(
         "Failed to get user's pinned regions",
+        ERROR_CODES.INTERNAL_ERROR,
         pinnedRegionsResult.error,
       ),
     );
@@ -176,6 +250,7 @@ export async function reorderPinnedRegions(
       return err(
         new RegionPinApplicationError(
           `Region ${regionId} is not pinned by user`,
+          ERROR_CODES.NOT_FOUND,
         ),
       );
     }
@@ -187,6 +262,7 @@ export async function reorderPinnedRegions(
     return err(
       new RegionPinApplicationError(
         "Failed to reorder pinned regions",
+        ERROR_CODES.INTERNAL_ERROR,
         reorderResult.error,
       ),
     );

@@ -1,14 +1,19 @@
-import { ok, type Result } from "neverthrow";
-import type {
+import { err, ok, type Result } from "neverthrow";
+import {
   AuthServiceError,
-  PasswordHasher,
-  TokenGenerator,
+  type PasswordHasher,
+  type TokenGenerator,
 } from "@/core/domain/user/ports/authService";
 
 export class MockPasswordHasher implements PasswordHasher {
   private passwords = new Map<string, string>();
 
   async hash(password: string): Promise<Result<string, AuthServiceError>> {
+    // Validate password is not empty
+    if (!password || password.trim().length === 0) {
+      return err(new AuthServiceError("Password cannot be empty"));
+    }
+
     const hashedPassword = `hashed_${password}`;
     this.passwords.set(hashedPassword, password);
     return ok(hashedPassword);

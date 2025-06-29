@@ -41,7 +41,10 @@ export async function listPlaces(
     const { query, userId } = request;
 
     // If no user is provided, only show published places
-    if (!userId && query.filter) {
+    if (!userId) {
+      if (!query.filter) {
+        query.filter = {};
+      }
       query.filter.status = "published";
     }
 

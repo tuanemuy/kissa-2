@@ -107,6 +107,17 @@ export async function deletePlace(
         const deleteResult = await txContext.placeRepository.delete(placeId);
 
         if (deleteResult.isErr()) {
+          // Check if the error is because the place was not found
+          if (deleteResult.error.message === "Place not found") {
+            return err(
+              new DeletePlaceError(
+                "Place not found",
+                ERROR_CODES.PLACE_NOT_FOUND,
+                deleteResult.error,
+              ),
+            );
+          }
+
           return err(
             new DeletePlaceError(
               "Failed to delete place",
@@ -134,6 +145,14 @@ export async function deletePlace(
     );
 
     if (transactionResult.isErr()) {
+      // If the transaction failed due to a place not found error, preserve that error code
+      if (
+        transactionResult.error instanceof DeletePlaceError &&
+        transactionResult.error.code === ERROR_CODES.PLACE_NOT_FOUND
+      ) {
+        return err(transactionResult.error);
+      }
+
       return err(
         new DeletePlaceError(
           "Transaction failed during place deletion",

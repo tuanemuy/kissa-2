@@ -32,7 +32,7 @@ export async function createSubscription(
       return err(
         new CreateSubscriptionError(
           "Failed to find user",
-          ERROR_CODES.INTERNAL_ERROR,
+          ERROR_CODES.USER_NOT_FOUND,
           userResult.error,
         ),
       );
@@ -95,6 +95,18 @@ export async function createSubscription(
     });
 
     if (subscriptionResult.isErr()) {
+      // Check if this is a duplicate subscription error
+      if (
+        subscriptionResult.error.message === "User already has a subscription"
+      ) {
+        return err(
+          new CreateSubscriptionError(
+            "User already has a subscription",
+            ERROR_CODES.SUBSCRIPTION_ALREADY_EXISTS,
+          ),
+        );
+      }
+
       return err(
         new CreateSubscriptionError(
           "Failed to create subscription",

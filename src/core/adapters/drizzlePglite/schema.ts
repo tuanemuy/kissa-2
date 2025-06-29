@@ -556,6 +556,12 @@ export const reports = pgTable(
     typeIdx: index("reports_type_idx").on(table.type),
     createdAtIdx: index("reports_created_at_idx").on(table.createdAt),
     reviewedByIdx: index("reports_reviewed_by_idx").on(table.reviewedBy),
+    // Ensure a user can only report the same entity once
+    reporterEntityUnique: unique("reports_reporter_entity_unique").on(
+      table.reporterUserId,
+      table.entityType,
+      table.entityId,
+    ),
   }),
 );
 
