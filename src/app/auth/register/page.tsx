@@ -12,6 +12,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { AuthFormState } from "@/lib/formState";
 
 const registerSchema = z.object({
   email: z.string().email("有効なメールアドレスを入力してください"),
@@ -29,7 +30,7 @@ const registerSchema = z.object({
 type RegisterInput = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const [formState, formAction, isPending] = useActionState(registerAction, {
+  const [formState, formAction, isPending] = useActionState<AuthFormState<RegisterInput>>(registerAction, {
     input: { email: "", name: "", password: "", bio: "" },
     error: null,
   });
@@ -148,7 +149,9 @@ export default function RegisterPage() {
           {formState.error && (
             <Alert variant="destructive">
               <AlertDescription>
-                {formState.error.message || "登録に失敗しました"}
+                {typeof formState.error === 'object' && 'message' in formState.error 
+                  ? formState.error.message 
+                  : "登録に失敗しました"}
               </AlertDescription>
             </Alert>
           )}

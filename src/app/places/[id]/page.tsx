@@ -16,6 +16,7 @@ import { getPlaceByIdAction } from "@/actions/place";
 import { getRegionByIdAction } from "@/actions/region";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { generateKey } from "@/lib/utils";
 
 interface PlaceDetailPageProps {
   params: {
@@ -264,12 +265,18 @@ export default function PlaceDetailPage({ params }: PlaceDetailPageProps) {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="h-4 bg-gray-200 rounded" />
+                      <div
+                        key={generateKey("place-detail-left", i)}
+                        className="h-4 bg-gray-200 rounded"
+                      />
                     ))}
                   </div>
                   <div className="space-y-2">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="h-4 bg-gray-200 rounded" />
+                      <div
+                        key={generateKey("place-detail-right", i)}
+                        className="h-4 bg-gray-200 rounded"
+                      />
                     ))}
                   </div>
                 </div>

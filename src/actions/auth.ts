@@ -15,15 +15,21 @@ import {
   requestPasswordReset,
   resetPassword,
 } from "@/core/application/user/resetPassword";
-import type { FormState } from "@/lib/formState";
+import type { AuthFormState } from "@/lib/formState";
 import { validate } from "@/lib/validation";
 import { context } from "./context";
 
+// Type definitions for form inputs
+type LoginInput = { email: string; password: string };
+type RegisterInput = { email: string; password: string; name: string; bio?: string };
+type RequestResetInput = { email: string };
+type ResetPasswordInput = { token: string; newPassword: string };
+
 // Login action
 export async function loginAction(
-  _prevState: FormState,
+  _prevState: AuthFormState<LoginInput>,
   formData: FormData,
-): Promise<FormState> {
+): Promise<AuthFormState<LoginInput>> {
   const input = {
     email: formData.get("email"),
     password: formData.get("password"),
@@ -62,9 +68,9 @@ export async function loginAction(
 
 // Register action
 export async function registerAction(
-  _prevState: FormState,
+  _prevState: AuthFormState<RegisterInput>,
   formData: FormData,
-): Promise<FormState> {
+): Promise<AuthFormState<RegisterInput>> {
   const input = {
     email: formData.get("email"),
     password: formData.get("password"),
@@ -103,9 +109,9 @@ const requestPasswordResetSchema = z.object({
 });
 
 export async function requestPasswordResetAction(
-  _prevState: FormState,
+  _prevState: AuthFormState<RequestResetInput>,
   formData: FormData,
-): Promise<FormState> {
+): Promise<AuthFormState<RequestResetInput>> {
   const input = {
     email: formData.get("email"),
   };
@@ -141,9 +147,9 @@ const resetPasswordSchema = z.object({
 });
 
 export async function resetPasswordAction(
-  _prevState: FormState,
+  _prevState: AuthFormState<ResetPasswordInput>,
   formData: FormData,
-): Promise<FormState> {
+): Promise<AuthFormState<ResetPasswordInput>> {
   const input = {
     token: formData.get("token"),
     newPassword: formData.get("newPassword"),

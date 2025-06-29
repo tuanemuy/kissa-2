@@ -5,6 +5,7 @@ import { getFeaturedRegionsAction } from "@/actions/region";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { generateKey } from "@/lib/utils";
 
 async function FeaturedRegions() {
   try {
@@ -121,7 +122,10 @@ export default function Home() {
             fallback={
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="h-48 animate-pulse">
+                  <Card
+                    key={generateKey("featured-skeleton", i)}
+                    className="h-48 animate-pulse"
+                  >
                     <CardHeader>
                       <div className="h-6 bg-gray-200 rounded" />
                     </CardHeader>

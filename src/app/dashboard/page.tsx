@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
+import { generateKey } from "@/lib/utils";
 
 async function DashboardContent() {
   try {
@@ -323,7 +324,10 @@ export default function DashboardPage() {
               {/* Stats Skeleton */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="animate-pulse">
+                  <Card
+                    key={generateKey("stats-skeleton", i)}
+                    className="animate-pulse"
+                  >
                     <CardHeader>
                       <div className="h-4 bg-gray-200 rounded w-3/4" />
                     </CardHeader>
@@ -337,14 +341,17 @@ export default function DashboardPage() {
 
               {/* Content Sections Skeleton */}
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i}>
+                <div key={generateKey("content-section", i)}>
                   <div className="flex justify-between items-center mb-4">
                     <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse" />
                     <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {Array.from({ length: 3 }).map((_, j) => (
-                      <Card key={j} className="h-32 animate-pulse">
+                      <Card
+                        key={generateKey(`content-card-${i}`, j)}
+                        className="h-32 animate-pulse"
+                      >
                         <CardContent>
                           <div className="h-full bg-gray-200 rounded" />
                         </CardContent>

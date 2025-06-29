@@ -87,3 +87,18 @@ export function filterByDistance<T extends { coordinates?: Coordinates }>(
     return distance <= radiusKm;
   });
 }
+
+let keyCounter = 0;
+
+/**
+ * Generate a unique key for React elements
+ * @param prefix Optional prefix for the key
+ * @param index Optional index to make it unique
+ * @returns A unique string key
+ */
+export function generateKey(prefix = "item", index?: number): string {
+  keyCounter += 1;
+  return index !== undefined
+    ? `${prefix}-${index}-${keyCounter}`
+    : `${prefix}-${keyCounter}`;
+}

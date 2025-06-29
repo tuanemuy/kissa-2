@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { AuthFormState } from "@/lib/formState";
 
 const requestResetSchema = z.object({
   email: z.string().email("有効なメールアドレスを入力してください"),
@@ -36,12 +37,12 @@ export default function ResetPasswordPage() {
   const token = searchParams.get("token");
 
   const [requestFormState, requestFormAction, isRequestPending] =
-    useActionState(requestPasswordResetAction, {
+    useActionState<AuthFormState<RequestResetInput>>(requestPasswordResetAction, {
       input: { email: "" },
       error: null,
     });
 
-  const [resetFormState, resetFormAction, isResetPending] = useActionState(
+  const [resetFormState, resetFormAction, isResetPending] = useActionState<AuthFormState<ResetPasswordInput>>(
     resetPasswordAction,
     { input: { token: token || "", newPassword: "" }, error: null },
   );
@@ -118,8 +119,9 @@ export default function ResetPasswordPage() {
             {resetFormState.error && (
               <Alert variant="destructive">
                 <AlertDescription>
-                  {resetFormState.error.message ||
-                    "パスワードリセットに失敗しました"}
+                  {typeof resetFormState.error === 'object' && 'message' in resetFormState.error 
+                    ? resetFormState.error.message 
+                    : "パスワードリセットに失敗しました"}
                 </AlertDescription>
               </Alert>
             )}
@@ -201,8 +203,9 @@ export default function ResetPasswordPage() {
           {requestFormState.error && (
             <Alert variant="destructive">
               <AlertDescription>
-                {requestFormState.error.message ||
-                  "リセットメールの送信に失敗しました"}
+                {typeof requestFormState.error === 'object' && 'message' in requestFormState.error 
+                  ? requestFormState.error.message 
+                  : "リセットメールの送信に失敗しました"}
               </AlertDescription>
             </Alert>
           )}

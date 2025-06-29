@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { AuthFormState } from "@/lib/formState";
 
 const loginSchema = z.object({
   email: z.string().email("有効なメールアドレスを入力してください"),
@@ -20,7 +21,7 @@ const loginSchema = z.object({
 type LoginInput = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const [formState, formAction, isPending] = useActionState(loginAction, {
+  const [formState, formAction, isPending] = useActionState<AuthFormState<LoginInput>>(loginAction, {
     input: { email: "", password: "" },
     error: null,
   });
@@ -78,7 +79,9 @@ export default function LoginPage() {
           {formState.error && (
             <Alert variant="destructive">
               <AlertDescription>
-                {formState.error.message || "ログインに失敗しました"}
+                {typeof formState.error === 'object' && 'message' in formState.error 
+                  ? formState.error.message 
+                  : "ログインに失敗しました"}
               </AlertDescription>
             </Alert>
           )}

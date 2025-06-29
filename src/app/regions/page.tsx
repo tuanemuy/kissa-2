@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { generateKey } from "@/lib/utils";
 
 interface RegionsPageProps {
   searchParams: Record<string, string | string[] | undefined>;
@@ -74,7 +75,7 @@ async function RegionsList({
                       <div className="flex flex-wrap gap-1 mt-2">
                         {region.tags.slice(0, 3).map((tag, index) => (
                           <Badge
-                            key={index}
+                            key={generateKey(`tag-${region.id}`, index)}
                             variant="secondary"
                             className="text-xs"
                           >
@@ -247,7 +248,10 @@ export default function RegionsPage({ searchParams }: RegionsPageProps) {
           fallback={
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 9 }).map((_, i) => (
-                <Card key={i} className="h-64 animate-pulse">
+                <Card
+                  key={generateKey("regions-skeleton", i)}
+                  className="h-64 animate-pulse"
+                >
                   <CardHeader>
                     <div className="h-6 bg-gray-200 rounded" />
                     <div className="flex gap-1 mt-2">

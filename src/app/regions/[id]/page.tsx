@@ -15,6 +15,7 @@ import { getRegionByIdAction } from "@/actions/region";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { generateKey } from "@/lib/utils";
 
 interface RegionDetailPageProps {
   params: {
@@ -45,7 +46,10 @@ async function RegionDetails({ regionId }: { regionId: string }) {
                 <div className="flex flex-wrap gap-2 mb-4">
                   <TagIcon className="h-4 w-4 text-gray-500 mt-1" />
                   {region.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary">
+                    <Badge
+                      key={generateKey(`region-tag-${region.id}`, index)}
+                      variant="secondary"
+                    >
                       {tag}
                     </Badge>
                   ))}
@@ -224,7 +228,10 @@ export default function RegionDetailPage({ params }: RegionDetailPageProps) {
                 </div>
                 <div className="grid grid-cols-4 gap-4">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-4 bg-gray-200 rounded" />
+                    <div
+                      key={generateKey("detail-stats", i)}
+                      className="h-4 bg-gray-200 rounded"
+                    />
                   ))}
                 </div>
               </div>
@@ -247,7 +254,10 @@ export default function RegionDetailPage({ params }: RegionDetailPageProps) {
             fallback={
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="h-48 animate-pulse">
+                  <Card
+                    key={generateKey("places-skeleton", i)}
+                    className="h-48 animate-pulse"
+                  >
                     <CardHeader>
                       <div className="h-6 bg-gray-200 rounded" />
                       <div className="h-4 w-20 bg-gray-200 rounded" />
