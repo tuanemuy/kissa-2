@@ -1,6 +1,7 @@
 import { Heart, MapPin, Pin, Plus, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUserAction } from "@/actions/auth";
 import { getUserCheckinsAction } from "@/actions/checkins";
 import { getUserFavoriteRegionsAction } from "@/actions/favorites";
@@ -17,6 +18,16 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
+  return (
+    <UserLayout>
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardContent />
+      </Suspense>
+    </UserLayout>
+  );
+}
+
+async function DashboardContent() {
   const { result: user, error } = await getCurrentUserAction();
 
   if (error) {
@@ -30,6 +41,96 @@ export default async function DashboardPage() {
 
   const userDisplayName = UserDomain.getDisplayName(user);
 
+  return (
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-3xl font-bold mb-2">
+          おかえりなさい、{userDisplayName}さん
+        </h1>
+        <p className="text-muted-foreground">今日はどの地域を探検しますか？</p>
+      </div>
+
+      {/* Quick Stats */}
+      <Suspense fallback={<StatsSkeleton />}>
+        <UserStats />
+      </Suspense>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Pinned Regions */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center">
+                <Pin className="h-5 w-5 mr-2" />
+                ピン留めした地域
+              </CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/pinned">すべて見る</Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<PinnedRegionsSkeleton />}>
+              <PinnedRegionsSection />
+            </Suspense>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle>最近のアクティビティ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<RecentActivitySkeleton />}>
+              <RecentActivitySection />
+            </Suspense>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recommended Regions */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>おすすめの地域</CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/regions">すべて見る</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <RecommendedRegionCard
+              name="横浜市中区"
+              description="港町の魅力あふれるエリア"
+              placeCount={89}
+              tags={["観光", "グルメ", "夜景"]}
+              href="/regions/4"
+            />
+            <RecommendedRegionCard
+              name="奈良市"
+              description="古都の歴史を感じる場所"
+              placeCount={42}
+              tags={["歴史", "寺院", "自然"]}
+              href="/regions/5"
+            />
+            <RecommendedRegionCard
+              name="福岡市中央区"
+              description="九州の玄関口"
+              placeCount={76}
+              tags={["グルメ", "ショッピング", "文化"]}
+              href="/regions/6"
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+async function UserStats() {
   // Fetch user data in parallel
   const [
     { result: favoriteRegions = [] },
@@ -53,200 +154,255 @@ export default async function DashboardPage() {
   const discoveredPlacesCount = discoveredPlacesSet.size;
 
   return (
-    <UserLayout>
-      <div className="space-y-8">
-        {/* Welcome Section */}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">
-            おかえりなさい、{userDisplayName}さん
-          </h1>
-          <p className="text-muted-foreground">
-            今日はどの地域を探検しますか？
-          </p>
-        </div>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">お気に入り地域</CardTitle>
+          <Heart className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{favoriteRegionsCount}</div>
+          <p className="text-xs text-muted-foreground">お気に入り登録中</p>
+        </CardContent>
+      </Card>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                お気に入り地域
-              </CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{favoriteRegionsCount}</div>
-              <p className="text-xs text-muted-foreground">お気に入り登録中</p>
-            </CardContent>
-          </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">ピン留め</CardTitle>
+          <Pin className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{pinnedRegionsCount}</div>
+          <p className="text-xs text-muted-foreground">よく見る地域</p>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ピン留め</CardTitle>
-              <Pin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pinnedRegionsCount}</div>
-              <p className="text-xs text-muted-foreground">よく見る地域</p>
-            </CardContent>
-          </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">チェックイン</CardTitle>
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalCheckinsCount}</div>
+          <p className="text-xs text-muted-foreground">総チェックイン数</p>
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                チェックイン
-              </CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalCheckinsCount}</div>
-              <p className="text-xs text-muted-foreground">総チェックイン数</p>
-            </CardContent>
-          </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">発見した場所</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{discoveredPlacesCount}</div>
+          <p className="text-xs text-muted-foreground">ユニーク場所数</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                発見した場所
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{discoveredPlacesCount}</div>
-              <p className="text-xs text-muted-foreground">ユニーク場所数</p>
-            </CardContent>
-          </Card>
-        </div>
+async function PinnedRegionsSection() {
+  const { result: pinnedRegions = [] } = await getUserPinnedRegionsAction();
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Pinned Regions */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <Pin className="h-5 w-5 mr-2" />
-                  ピン留めした地域
-                </CardTitle>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/pinned">すべて見る</Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {pinnedRegions.length > 0 ? (
-                  pinnedRegions
-                    .slice(0, 3)
-                    .map((region) => (
-                      <PinnedRegionCard
-                        key={region.id}
-                        name={region.name}
-                        description={region.description || ""}
-                        visitCount={region.placeCount || 0}
-                        lastVisit="最近"
-                        href={`/regions/${region.id}`}
-                      />
-                    ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Pin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>ピン留めした地域がありません</p>
-                    <p className="text-sm">
-                      気になる地域をピン留めしてみましょう
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 pt-4 border-t">
-                <Button variant="ghost" className="w-full" asChild>
-                  <Link href="/regions">
-                    <Plus className="h-4 w-4 mr-2" />
-                    新しい地域を探す
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+  return (
+    <>
+      <div className="space-y-4">
+        {pinnedRegions.length > 0 ? (
+          pinnedRegions
+            .slice(0, 3)
+            .map((region) => (
+              <PinnedRegionCard
+                key={region.id}
+                name={region.name}
+                description={region.description || ""}
+                visitCount={region.placeCount || 0}
+                lastVisit="最近"
+                href={`/regions/${region.id}`}
+              />
+            ))
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <Pin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>ピン留めした地域がありません</p>
+            <p className="text-sm">気になる地域をピン留めしてみましょう</p>
+          </div>
+        )}
+      </div>
+      <div className="mt-4 pt-4 border-t">
+        <Button variant="ghost" className="w-full" asChild>
+          <Link href="/regions">
+            <Plus className="h-4 w-4 mr-2" />
+            新しい地域を探す
+          </Link>
+        </Button>
+      </div>
+    </>
+  );
+}
 
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>最近のアクティビティ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentCheckins.length > 0 ? (
-                  recentCheckins.slice(0, 4).map((checkin) => (
-                    <ActivityItem
-                      key={checkin.id}
-                      type="checkin"
-                      description={`${checkin.regionName || "地域"}の「${checkin.placeName || "場所"}」でチェックイン`}
-                      time={new Date(checkin.createdAt).toLocaleDateString(
-                        "ja-JP",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>まだアクティビティがありません</p>
-                    <p className="text-sm">場所にチェックインしてみましょう</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 pt-4 border-t">
-                <Button variant="ghost" className="w-full" asChild>
-                  <Link href="/checkins">履歴をすべて見る</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+async function RecentActivitySection() {
+  const { result: recentCheckins = [] } = await getUserCheckinsAction(20);
 
-        {/* Recommended Regions */}
+  return (
+    <>
+      <div className="space-y-4">
+        {recentCheckins.length > 0 ? (
+          recentCheckins.slice(0, 4).map((checkin) => (
+            <ActivityItem
+              key={checkin.id}
+              type="checkin"
+              description={`${checkin.regionName || "地域"}の「${checkin.placeName || "場所"}」でチェックイン`}
+              time={new Date(checkin.createdAt).toLocaleDateString("ja-JP", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            />
+          ))
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>まだアクティビティがありません</p>
+            <p className="text-sm">場所にチェックインしてみましょう</p>
+          </div>
+        )}
+      </div>
+      <div className="mt-4 pt-4 border-t">
+        <Button variant="ghost" className="w-full" asChild>
+          <Link href="/checkins">履歴をすべて見る</Link>
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Welcome Section Skeleton */}
+      <div>
+        <div className="h-8 bg-muted rounded w-1/2 mb-2 animate-pulse" />
+        <div className="h-4 bg-muted rounded w-1/3 animate-pulse" />
+      </div>
+
+      {/* Stats Skeleton */}
+      <StatsSkeleton />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Pinned Regions Skeleton */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>おすすめの地域</CardTitle>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/regions">すべて見る</Link>
-              </Button>
+              <div className="h-5 bg-muted rounded w-1/3 animate-pulse" />
+              <div className="h-8 w-20 bg-muted rounded animate-pulse" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <RecommendedRegionCard
-                name="横浜市中区"
-                description="港町の魅力あふれるエリア"
-                placeCount={89}
-                tags={["観光", "グルメ", "夜景"]}
-                href="/regions/4"
-              />
-              <RecommendedRegionCard
-                name="奈良市"
-                description="古都の歴史を感じる場所"
-                placeCount={42}
-                tags={["歴史", "寺院", "自然"]}
-                href="/regions/5"
-              />
-              <RecommendedRegionCard
-                name="福岡市中央区"
-                description="九州の玄関口"
-                placeCount={76}
-                tags={["グルメ", "ショッピング", "文化"]}
-                href="/regions/6"
-              />
-            </div>
+            <PinnedRegionsSkeleton />
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity Skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="h-5 bg-muted rounded w-1/3 animate-pulse" />
+          </CardHeader>
+          <CardContent>
+            <RecentActivitySkeleton />
           </CardContent>
         </Card>
       </div>
-    </UserLayout>
+
+      {/* Recommended Regions Skeleton */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="h-5 bg-muted rounded w-1/3 animate-pulse" />
+            <div className="h-8 w-20 bg-muted rounded animate-pulse" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton elements don't reorder
+                key={`recommended-skeleton-${i}`}
+                className="p-4 rounded-lg border"
+              >
+                <div className="h-5 bg-muted rounded mb-2 animate-pulse" />
+                <div className="h-4 bg-muted rounded mb-3 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {Array.from({ length: 4 }, (_, i) => (
+        <Card
+          // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton elements don't reorder
+          key={`stats-skeleton-${i}`}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="h-4 bg-muted rounded w-2/3 animate-pulse" />
+            <div className="h-4 w-4 bg-muted rounded animate-pulse" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-8 bg-muted rounded w-1/2 mb-2 animate-pulse" />
+            <div className="h-3 bg-muted rounded w-3/4 animate-pulse" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function PinnedRegionsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 3 }, (_, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton elements don't reorder
+          key={`pinned-skeleton-${i}`}
+          className="p-3 rounded-lg border"
+        >
+          <div className="h-4 bg-muted rounded mb-2 animate-pulse" />
+          <div className="h-3 bg-muted rounded mb-2 animate-pulse" />
+          <div className="flex justify-between">
+            <div className="h-3 bg-muted rounded w-1/4 animate-pulse" />
+            <div className="h-3 bg-muted rounded w-1/4 animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecentActivitySkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 4 }, (_, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton elements don't reorder
+          key={`activity-skeleton-${i}`}
+          className="flex items-start space-x-3"
+        >
+          <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+          <div className="flex-1 space-y-1">
+            <div className="h-4 bg-muted rounded animate-pulse" />
+            <div className="h-3 bg-muted rounded w-1/3 animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -62,6 +62,9 @@ export async function getPlaceByIdAction(
   };
 }
 
+// Entity-level data fetching for cache optimization
+// Note: These actions fetch complete entities and will be cached later
+
 // List places
 export async function listPlacesAction(
   query: ListPlacesQuery,

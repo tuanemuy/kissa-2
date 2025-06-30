@@ -55,12 +55,183 @@ export default async function PlaceDetailPage({
   params,
 }: PlaceDetailPageProps) {
   const { id } = await params;
-  const { result: place, error } = await getPlaceByIdAction(id);
+
+  return (
+    <main className="container mx-auto py-8">
+      <Suspense fallback={<PlaceDetailSkeleton />}>
+        <PlaceHero placeId={id} />
+      </Suspense>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-8">
+          <Suspense fallback={<PlaceMainContentSkeleton />}>
+            <PlaceMainContent placeId={id} />
+          </Suspense>
+        </div>
+
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <Suspense fallback={<PlaceSidebarSkeleton />}>
+            <PlaceSidebarContent placeId={id} />
+          </Suspense>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+async function PlaceHero({ placeId }: { placeId: string }) {
+  const { result: place, error } = await getPlaceByIdAction(placeId);
 
   if (error || !place) {
     notFound();
   }
 
+  return (
+    <div className="relative mb-8">
+      {place.coverImage && (
+        <div className="w-full h-64 md:h-96 relative rounded-lg overflow-hidden">
+          <Image
+            src={place.coverImage}
+            alt={place.name}
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <div className="flex items-start justify-between">
+              <div>
+                <Badge
+                  variant="secondary"
+                  className="mb-2 bg-white/20 text-white border-white/30"
+                >
+                  {getCategoryDisplayName(place.category)}
+                </Badge>
+                <h1 className="text-4xl md:text-5xl font-bold mb-2">
+                  {place.name}
+                </h1>
+                {place.shortDescription && (
+                  <p className="text-lg opacity-90">{place.shortDescription}</p>
+                )}
+              </div>
+              {place.averageRating && (
+                <div className="flex items-center bg-white/20 rounded-lg px-3 py-1 backdrop-blur-sm">
+                  <Star className="h-5 w-5 text-yellow-400 fill-current mr-1" />
+                  <span className="font-semibold">
+                    {place.averageRating.toFixed(1)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!place.coverImage && (
+        <div className="bg-muted rounded-lg p-8 text-center">
+          <Badge variant="secondary" className="mb-4">
+            {getCategoryDisplayName(place.category)}
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold mb-2">{place.name}</h1>
+          {place.shortDescription && (
+            <p className="text-lg text-muted-foreground">
+              {place.shortDescription}
+            </p>
+          )}
+          {place.averageRating && (
+            <div className="flex items-center justify-center mt-4">
+              <Star className="h-5 w-5 text-yellow-500 fill-current mr-1" />
+              <span className="font-semibold text-lg">
+                {place.averageRating.toFixed(1)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+async function PlaceMainContent({ placeId }: { placeId: string }) {
+  const { result: place, error } = await getPlaceByIdAction(placeId);
+
+  if (error || !place) {
+    return null;
+  }
+
+  return (
+    <>
+      {place.description && (
+        <Card>
+          <CardHeader>
+            <CardTitle>詳細情報</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose max-w-none">
+              <p className="whitespace-pre-wrap">{place.description}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {place.images && place.images.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>写真</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PhotoGallery images={place.images} placeName={place.name} />
+          </CardContent>
+        </Card>
+      )}
+
+      {place.businessHours && place.businessHours.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>営業時間</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BusinessHours businessHours={place.businessHours} />
+          </CardContent>
+        </Card>
+      )}
+
+      <Suspense fallback={<CheckinListSkeleton />}>
+        <CheckinList placeId={place.id} />
+      </Suspense>
+    </>
+  );
+}
+
+async function PlaceSidebarContent({ placeId }: { placeId: string }) {
+  const { result: place, error } = await getPlaceByIdAction(placeId);
+
+  if (error || !place) {
+    return null;
+  }
+
+  return <PlaceSidebar place={place} />;
+}
+
+async function PlaceSidebar({
+  place,
+}: {
+  place: {
+    id: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    favoriteCount: number;
+    checkinCount: number;
+    tags: string[];
+    regionName?: string;
+    regionId?: string;
+    name: string;
+    coordinates?: { latitude: number; longitude: number };
+  };
+}) {
   // Check authentication
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get("session_token");
@@ -72,293 +243,221 @@ export default async function PlaceDetailPage({
   }
 
   return (
-    <main className="container mx-auto py-8">
-      {/* Hero Section */}
-      <div className="relative mb-8">
-        {place.coverImage && (
-          <div className="w-full h-64 md:h-96 relative rounded-lg overflow-hidden">
-            <Image
-              src={place.coverImage}
-              alt={place.name}
-              fill
-              className="object-cover"
+    <div className="bg-card rounded-lg p-6 sticky top-8 space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-4">基本情報</h3>
+        <div className="space-y-4">
+          {place.address && (
+            <div className="flex items-start space-x-3">
+              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">住所</p>
+                <p className="text-sm text-muted-foreground">{place.address}</p>
+              </div>
+            </div>
+          )}
+
+          {place.phone && (
+            <div className="flex items-start space-x-3">
+              <Phone className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">電話番号</p>
+                <a
+                  href={`tel:${place.phone}`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {place.phone}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {place.email && (
+            <div className="flex items-start space-x-3">
+              <Mail className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">メール</p>
+                <a
+                  href={`mailto:${place.email}`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {place.email}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {place.website && (
+            <div className="flex items-start space-x-3">
+              <Globe className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">ウェブサイト</p>
+                <a
+                  href={place.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline inline-flex items-center"
+                >
+                  公式サイト
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h4 className="text-sm font-medium mb-3">統計情報</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">
+              {place.favoriteCount}
+            </div>
+            <div className="text-xs text-muted-foreground">お気に入り</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">
+              {place.checkinCount}
+            </div>
+            <div className="text-xs text-muted-foreground">チェックイン</div>
+          </div>
+        </div>
+      </div>
+
+      {place.tags.length > 0 && (
+        <>
+          <Separator />
+          <div>
+            <h4 className="text-sm font-medium mb-3">タグ</h4>
+            <div className="flex flex-wrap gap-1">
+              {place.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      <Separator />
+
+      <div className="space-y-2">
+        {isAuthenticated ? (
+          <>
+            <FavoriteButton
+              placeId={place.id}
+              isAuthenticated={isAuthenticated}
             />
-            <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <Badge
-                    variant="secondary"
-                    className="mb-2 bg-white/20 text-white border-white/30"
-                  >
-                    {getCategoryDisplayName(place.category)}
-                  </Badge>
-                  <h1 className="text-4xl md:text-5xl font-bold mb-2">
-                    {place.name}
-                  </h1>
-                  {place.shortDescription && (
-                    <p className="text-lg opacity-90">
-                      {place.shortDescription}
-                    </p>
-                  )}
-                </div>
-                {place.averageRating && (
-                  <div className="flex items-center bg-white/20 rounded-lg px-3 py-1 backdrop-blur-sm">
-                    <Star className="h-5 w-5 text-yellow-400 fill-current mr-1" />
-                    <span className="font-semibold">
-                      {place.averageRating.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+            <CheckinButton
+              placeId={place.id}
+              placeName={place.name}
+              placeCoordinates={place.coordinates}
+              isAuthenticated={isAuthenticated}
+            />
+          </>
+        ) : (
+          <AuthPrompt
+            title="この場所をもっと楽しむ"
+            description="アカウントを作成してチェックインしよう"
+            features={[
+              "場所にチェックイン",
+              "お気に入りに追加",
+              "レビューを投稿",
+            ]}
+            variant="compact"
+            currentPath={`/places/${place.id}`}
+          />
         )}
 
-        {!place.coverImage && (
-          <div className="bg-muted rounded-lg p-8 text-center">
-            <Badge variant="secondary" className="mb-4">
-              {getCategoryDisplayName(place.category)}
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-2">
-              {place.name}
-            </h1>
-            {place.shortDescription && (
-              <p className="text-lg text-muted-foreground">
-                {place.shortDescription}
-              </p>
-            )}
-            {place.averageRating && (
-              <div className="flex items-center justify-center mt-4">
-                <Star className="h-5 w-5 text-yellow-500 fill-current mr-1" />
-                <span className="font-semibold text-lg">
-                  {place.averageRating.toFixed(1)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+        <Separator />
+
+        {/* Report Button */}
+        <ReportModal
+          contentType="place"
+          contentId={place.id}
+          contentTitle={place.name}
+          trigger={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground hover:text-red-600"
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              この場所を通報
+            </Button>
+          }
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-8">
-          {place.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>詳細情報</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
-                  <p className="whitespace-pre-wrap">{place.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {place.images && place.images.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>写真</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PhotoGallery images={place.images} placeName={place.name} />
-              </CardContent>
-            </Card>
-          )}
-
-          {place.businessHours && place.businessHours.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>営業時間</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <BusinessHours businessHours={place.businessHours} />
-              </CardContent>
-            </Card>
-          )}
-
-          <Suspense fallback={<CheckinListSkeleton />}>
-            <CheckinList placeId={place.id} />
-          </Suspense>
-        </div>
-
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="bg-card rounded-lg p-6 sticky top-8 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">基本情報</h3>
-              <div className="space-y-4">
-                {place.address && (
-                  <div className="flex items-start space-x-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">住所</p>
-                      <p className="text-sm text-muted-foreground">
-                        {place.address}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {place.phone && (
-                  <div className="flex items-start space-x-3">
-                    <Phone className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">電話番号</p>
-                      <a
-                        href={`tel:${place.phone}`}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {place.phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {place.email && (
-                  <div className="flex items-start space-x-3">
-                    <Mail className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">メール</p>
-                      <a
-                        href={`mailto:${place.email}`}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {place.email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {place.website && (
-                  <div className="flex items-start space-x-3">
-                    <Globe className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">ウェブサイト</p>
-                      <a
-                        href={place.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline inline-flex items-center"
-                      >
-                        公式サイト
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h4 className="text-sm font-medium mb-3">統計情報</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {place.favoriteCount}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    お気に入り
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {place.checkinCount}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    チェックイン
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {place.tags.length > 0 && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-medium mb-3">タグ</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {place.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <Separator />
-
-            <div className="space-y-2">
-              {isAuthenticated ? (
-                <>
-                  <FavoriteButton
-                    placeId={place.id}
-                    isAuthenticated={isAuthenticated}
-                  />
-                  <CheckinButton
-                    placeId={place.id}
-                    placeName={place.name}
-                    placeCoordinates={place.coordinates}
-                    isAuthenticated={isAuthenticated}
-                  />
-                </>
-              ) : (
-                <AuthPrompt
-                  title="この場所をもっと楽しむ"
-                  description="アカウントを作成してチェックインしよう"
-                  features={[
-                    "場所にチェックイン",
-                    "お気に入りに追加",
-                    "レビューを投稿",
-                  ]}
-                  variant="compact"
-                  currentPath={`/places/${place.id}`}
-                />
-              )}
-
-              <Separator />
-
-              {/* Report Button */}
-              <ReportModal
-                contentType="place"
-                contentId={place.id}
-                contentTitle={place.name}
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-muted-foreground hover:text-red-600"
-                  >
-                    <Flag className="h-4 w-4 mr-2" />
-                    この場所を通報
-                  </Button>
-                }
-              />
-            </div>
-
-            {place.regionName && (
-              <>
-                <Separator />
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">地域</p>
-                  <Link
-                    href={`/regions/${place.regionId}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {place.regionName}
-                  </Link>
-                </div>
-              </>
-            )}
+      {place.regionName && (
+        <>
+          <Separator />
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">地域</p>
+            <Link
+              href={`/regions/${place.regionId}`}
+              className="text-sm text-primary hover:underline"
+            >
+              {place.regionName}
+            </Link>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PlaceDetailSkeleton() {
+  return (
+    <div className="w-full h-64 md:h-96 bg-muted rounded-lg mb-8 animate-pulse" />
+  );
+}
+
+function PlaceMainContentSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="bg-card rounded-lg p-6">
+        <div className="h-6 bg-muted rounded w-1/4 mb-4 animate-pulse" />
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded animate-pulse" />
+          <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
         </div>
       </div>
-    </main>
+      <CheckinListSkeleton />
+    </div>
+  );
+}
+
+function PlaceSidebarSkeleton() {
+  return (
+    <div className="bg-card rounded-lg p-6 space-y-6">
+      <div>
+        <div className="h-5 bg-muted rounded w-1/3 mb-4 animate-pulse" />
+        <div className="space-y-4">
+          <div className="h-4 bg-muted rounded animate-pulse" />
+          <div className="h-4 bg-muted rounded animate-pulse" />
+          <div className="h-4 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="text-center">
+          <div className="h-8 bg-muted rounded animate-pulse" />
+          <div className="h-3 bg-muted rounded mt-2 animate-pulse" />
+        </div>
+        <div className="text-center">
+          <div className="h-8 bg-muted rounded animate-pulse" />
+          <div className="h-3 bg-muted rounded mt-2 animate-pulse" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-10 bg-muted rounded animate-pulse" />
+        <div className="h-10 bg-muted rounded animate-pulse" />
+      </div>
+    </div>
   );
 }
 

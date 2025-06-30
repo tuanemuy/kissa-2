@@ -55,6 +55,9 @@ export async function getRegionByIdAction(
   };
 }
 
+// Entity-level data fetching for cache optimization
+// Note: These actions fetch complete entities and will be cached later
+
 // List regions
 export async function listRegionsAction(
   query: ListRegionsQuery,
