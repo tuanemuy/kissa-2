@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getCurrentUserAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -8,14 +9,17 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { getCurrentUser } from "@/lib/auth";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
 }
 
 export async function PublicLayout({ children }: PublicLayoutProps) {
-  const user = await getCurrentUser();
+  const { result: user, error } = await getCurrentUserAction();
+
+  if (error) {
+    console.error("Failed to get current user:", error);
+  }
 
   return (
     <div className="min-h-screen bg-background">

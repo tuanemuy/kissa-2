@@ -160,6 +160,82 @@ export type EmailVerificationToken = z.infer<
   typeof emailVerificationTokenSchema
 >;
 
+/**
+ * Domain-level user utility functions
+ * These functions contain business logic related to user authorization and display
+ */
+
+/**
+ * Check if user has a specific role
+ */
+export function hasRole(
+  user: User | null,
+  role: "visitor" | "editor" | "admin",
+): boolean {
+  if (!user) return false;
+
+  // Admin has all permissions
+  if (user.role === "admin") return true;
+
+  // Editor has editor and visitor permissions
+  if (user.role === "editor" && (role === "editor" || role === "visitor"))
+    return true;
+
+  // Visitor has only visitor permissions
+  if (user.role === "visitor" && role === "visitor") return true;
+
+  return false;
+}
+
+/**
+ * Check if user has minimum required role
+ */
+export function hasMinimumRole(
+  user: User | null,
+  minimumRole: "visitor" | "editor" | "admin",
+): boolean {
+  if (!user) return false;
+
+  const roleHierarchy = { visitor: 1, editor: 2, admin: 3 };
+  const userRoleLevel = roleHierarchy[user.role] || 0;
+  const requiredLevel = roleHierarchy[minimumRole] || 0;
+
+  return userRoleLevel >= requiredLevel;
+}
+
+/**
+ * Get user display name
+ */
+export function getDisplayName(user: User | null): string {
+  if (!user) return "Guest";
+  return user.name || user.email.split("@")[0];
+}
+
+/**
+ * Check if user is active and can perform actions
+ */
+export function isActive(user: User | null): boolean {
+  if (!user) return false;
+  return user.status === "active";
+}
+
+/**
+ * Check if user email is verified
+ */
+export function isEmailVerified(user: User | null): boolean {
+  if (!user) return false;
+  return user.emailVerified;
+}
+
+// Backward compatibility - export as UserDomain namespace
+export const UserDomain = {
+  hasRole,
+  hasMinimumRole,
+  getDisplayName,
+  isActive,
+  isEmailVerified,
+};
+
 export const updateUserSubscriptionParamsSchema = z.object({
   plan: subscriptionPlanSchema.optional(),
   status: subscriptionStatusSchema.optional(),

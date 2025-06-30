@@ -1,8 +1,3 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import {
   Clock,
   ExternalLink,
@@ -14,6 +9,11 @@ import {
   Star,
   Users,
 } from "lucide-react";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getPlaceByIdAction } from "@/actions/place";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,9 +39,7 @@ export async function generateMetadata({
   return {
     title: `${place.name} - Kissa`,
     description:
-      place.shortDescription ||
-      place.description ||
-      `${place.name}の詳細情報`,
+      place.shortDescription || place.description || `${place.name}の詳細情報`,
   };
 }
 
@@ -81,7 +79,9 @@ export default async function PlaceDetailPage({
                     {place.name}
                   </h1>
                   {place.shortDescription && (
-                    <p className="text-lg opacity-90">{place.shortDescription}</p>
+                    <p className="text-lg opacity-90">
+                      {place.shortDescription}
+                    </p>
                   )}
                 </div>
                 {place.averageRating && (

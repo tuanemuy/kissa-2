@@ -21,6 +21,7 @@ import type {
   TokenGenerator,
 } from "@/core/domain/user/ports/authService";
 import type { EmailService } from "@/core/domain/user/ports/emailService";
+import type { SessionService } from "@/core/domain/user/ports/sessionService";
 import type {
   EmailVerificationTokenRepository,
   NotificationSettingsRepository,
@@ -44,6 +45,7 @@ export interface Context {
   passwordHasher: PasswordHasher;
   tokenGenerator: TokenGenerator;
   emailService: EmailService;
+  sessionService: SessionService;
 
   // Region repositories
   regionRepository: RegionRepository;
@@ -69,3 +71,6 @@ export interface Context {
     fn: (txContext: Context) => Promise<Result<T, Error>>,
   ): Promise<Result<T, Error>>;
 }
+
+// Type alias for application layer
+export type ApplicationContext = Context;

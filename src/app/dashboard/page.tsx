@@ -1,11 +1,12 @@
+import { Heart, MapPin, Pin, Plus, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Heart, MapPin, Pin, Plus, TrendingUp } from "lucide-react";
+import { getCurrentUserAction } from "@/actions/auth";
+import { UserLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserLayout } from "@/components/layout";
-import { getCurrentUser, getUserDisplayName } from "@/lib/auth";
+import { UserDomain } from "@/core/domain/user/types";
 
 export const metadata: Metadata = {
   title: "ダッシュボード - Kissa",
@@ -13,14 +14,18 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
+  const { result: user, error } = await getCurrentUserAction();
+
+  if (error) {
+    console.error("Failed to get current user:", error);
+  }
 
   if (!user) {
     // UserLayoutが認証をチェックするのでここには来ないはず
     return null;
   }
 
-  const userDisplayName = getUserDisplayName(user);
+  const userDisplayName = UserDomain.getDisplayName(user);
 
   return (
     <UserLayout>
@@ -46,24 +51,18 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">
-                +2 今月追加
-              </p>
+              <p className="text-xs text-muted-foreground">+2 今月追加</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                ピン留め
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">ピン留め</CardTitle>
               <Pin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">
-                よく見る地域
-              </p>
+              <p className="text-xs text-muted-foreground">よく見る地域</p>
             </CardContent>
           </Card>
 
@@ -76,9 +75,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">47</div>
-              <p className="text-xs text-muted-foreground">
-                今月 8 回
-              </p>
+              <p className="text-xs text-muted-foreground">今月 8 回</p>
             </CardContent>
           </Card>
 
@@ -91,9 +88,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">156</div>
-              <p className="text-xs text-muted-foreground">
-                総数
-              </p>
+              <p className="text-xs text-muted-foreground">総数</p>
             </CardContent>
           </Card>
         </div>
@@ -177,9 +172,7 @@ export default async function DashboardPage() {
               </div>
               <div className="mt-4 pt-4 border-t">
                 <Button variant="ghost" className="w-full" asChild>
-                  <Link href="/checkins">
-                    履歴をすべて見る
-                  </Link>
+                  <Link href="/checkins">履歴をすべて見る</Link>
                 </Button>
               </div>
             </CardContent>

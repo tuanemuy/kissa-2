@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   BarChart3,
   Bell,
@@ -10,7 +8,9 @@ import {
   Shield,
   Users,
 } from "lucide-react";
-import { logoutAction } from "@/actions/auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUserAction, logoutAction } from "@/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -36,20 +36,24 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getCurrentUser, getUserDisplayName, hasMinimumRole } from "@/lib/auth";
+import { UserDomain } from "@/core/domain/user/types";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export async function AdminLayout({ children }: AdminLayoutProps) {
-  const user = await getCurrentUser();
+  const { result: user, error } = await getCurrentUserAction();
 
-  if (!user || !hasMinimumRole(user, "admin")) {
+  if (error) {
+    console.error("Failed to get current user:", error);
+  }
+
+  if (!user || !UserDomain.hasMinimumRole(user, "admin")) {
     redirect("/auth/login");
   }
 
-  const userDisplayName = getUserDisplayName(user);
+  const userDisplayName = UserDomain.getDisplayName(user);
 
   return (
     <SidebarProvider>
@@ -322,9 +326,7 @@ export async function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {children}
-        </div>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

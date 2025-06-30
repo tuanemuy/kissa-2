@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   Bell,
   Heart,
@@ -10,7 +8,9 @@ import {
   Settings,
   User,
 } from "lucide-react";
-import { logoutAction } from "@/actions/auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUserAction, logoutAction } from "@/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -36,22 +36,26 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getCurrentUser, getUserDisplayName, hasMinimumRole } from "@/lib/auth";
+import { UserDomain } from "@/core/domain/user/types";
 
 interface UserLayoutProps {
   children: React.ReactNode;
 }
 
 export async function UserLayout({ children }: UserLayoutProps) {
-  const user = await getCurrentUser();
+  const { result: user, error } = await getCurrentUserAction();
+
+  if (error) {
+    console.error("Failed to get current user:", error);
+  }
 
   if (!user) {
     redirect("/auth/login");
   }
 
-  const userDisplayName = getUserDisplayName(user);
-  const isEditor = hasMinimumRole(user, "editor");
-  const isAdmin = hasMinimumRole(user, "admin");
+  const userDisplayName = UserDomain.getDisplayName(user);
+  const isEditor = UserDomain.hasMinimumRole(user, "editor");
+  const isAdmin = UserDomain.hasMinimumRole(user, "admin");
 
   return (
     <SidebarProvider>
@@ -59,7 +63,9 @@ export async function UserLayout({ children }: UserLayoutProps) {
         <SidebarHeader>
           <Link href="/" className="flex items-center space-x-2 px-3 py-2">
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">K</span>
+              <span className="text-primary-foreground font-bold text-sm">
+                K
+              </span>
             </div>
             <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
               Kissa
@@ -270,9 +276,7 @@ export async function UserLayout({ children }: UserLayoutProps) {
             <SidebarTrigger className="-ml-1" />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {children}
-        </div>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

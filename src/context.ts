@@ -2,6 +2,7 @@ import type { Result } from "neverthrow";
 import { z } from "zod/v4";
 import { BcryptPasswordHasher } from "@/core/adapters/auth/bcryptPasswordHasher";
 import { CryptoTokenGenerator } from "@/core/adapters/auth/cryptoTokenGenerator";
+import { DrizzleSessionService } from "@/core/adapters/auth/drizzleSessionService";
 import {
   DrizzlePgliteCheckinPhotoRepository,
   DrizzlePgliteCheckinRepository,
@@ -117,6 +118,11 @@ const emailService = (() => {
 })();
 const passwordHasher = new BcryptPasswordHasher();
 const tokenGenerator = new CryptoTokenGenerator();
+const sessionService = new DrizzleSessionService(
+  userRepository,
+  userSessionRepository,
+  tokenGenerator,
+);
 const locationService = new HaversineLocationService();
 
 export const context: Context = {
@@ -133,6 +139,7 @@ export const context: Context = {
   passwordHasher,
   tokenGenerator,
   emailService,
+  sessionService,
 
   // Region repositories
   regionRepository,

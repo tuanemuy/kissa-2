@@ -20,9 +20,42 @@ import {
   requestPasswordReset,
   resetPassword,
 } from "@/core/application/user/resetPassword";
+import {
+  getCurrentUser,
+  type SessionManagementError,
+} from "@/core/application/user/sessionManagement";
 import type { User } from "@/core/domain/user/types";
 import type { ActionState } from "@/lib/actionState";
 import { type ValidationError, validate } from "@/lib/validation";
+
+// Get Current User Action
+export async function getCurrentUserAction(): Promise<
+  ActionState<User | null, SessionManagementError>
+> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+
+  if (!sessionToken?.value) {
+    return {
+      result: null,
+      error: null,
+    };
+  }
+
+  const result = await getCurrentUser(context, sessionToken.value);
+
+  if (result.isErr()) {
+    return {
+      result: null,
+      error: result.error,
+    };
+  }
+
+  return {
+    result: result.value,
+    error: null,
+  };
+}
 
 // Login Action
 export async function loginAction(
