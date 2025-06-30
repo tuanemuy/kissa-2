@@ -186,7 +186,11 @@ const db = getDatabase(env.data.DATABASE_URL);
 
 export const context = {
   userRepository: new DrizzlePgliteUserRepository(db),
-  passwordHasher: new BcryptPasswordHasher(),
+  storageManager: new S3StorageManager({
+    bucketName: process.env.S3_BUCKET_NAME,
+    region: process.env.S3_REGION,
+    // Other S3 configurations...
+  }),
   // Ohter adapters...
 };
 ```

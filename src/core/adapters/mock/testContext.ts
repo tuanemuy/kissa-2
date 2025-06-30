@@ -17,6 +17,7 @@ import {
   MockRegionRepository,
 } from "./regionRepository";
 import { MockReportRepository } from "./reportRepository";
+import { MockSessionService } from "./sessionService";
 import {
   MockEmailVerificationTokenRepository,
   MockNotificationSettingsRepository,
@@ -29,6 +30,7 @@ import {
 export interface MockContextOptions {
   publicUrl?: string;
   shouldFailEmail?: boolean;
+  shouldFailSession?: boolean;
   shouldFailLocation?: boolean;
   shouldFailAdd?: boolean;
   shouldFailDelete?: boolean;
@@ -61,6 +63,7 @@ export function createMockContext(options: MockContextOptions = {}): Context {
   const mockPasswordHasher = new MockPasswordHasher();
   const mockTokenGenerator = new MockTokenGenerator();
   const mockEmailService = new MockEmailService();
+  const mockSessionService = new MockSessionService();
   const mockLocationService = new MockLocationService();
   const mockRegionRepository = new MockRegionRepository();
   const mockRegionFavoriteRepository = new MockRegionFavoriteRepository();
@@ -81,6 +84,10 @@ export function createMockContext(options: MockContextOptions = {}): Context {
 
   if (options.shouldFailEmail) {
     mockEmailService.setShouldFail(true);
+  }
+
+  if (options.shouldFailSession) {
+    mockSessionService.setShouldFail(true);
   }
 
   if (options.shouldFailLocation) {
@@ -175,6 +182,7 @@ export function createMockContext(options: MockContextOptions = {}): Context {
     passwordHasher: mockPasswordHasher,
     tokenGenerator: mockTokenGenerator,
     emailService: mockEmailService,
+    sessionService: mockSessionService,
 
     regionRepository: mockRegionRepository,
     regionFavoriteRepository: mockRegionFavoriteRepository,
@@ -217,6 +225,7 @@ export function resetMockContext(context: Context): void {
   (context.passwordHasher as MockPasswordHasher).reset();
   (context.tokenGenerator as MockTokenGenerator).reset();
   (context.emailService as MockEmailService).reset();
+  (context.sessionService as MockSessionService).clearSessions();
   (context.locationService as MockLocationService).reset();
   (context.regionRepository as MockRegionRepository).reset();
   (context.regionFavoriteRepository as MockRegionFavoriteRepository).reset();
