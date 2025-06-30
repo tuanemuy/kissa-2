@@ -9,12 +9,12 @@ import {
   type SessionManagementError,
 } from "@/core/application/user/sessionManagement";
 import {
-  getUserProfile,
-  updateUserProfile,
-  changeUserPassword,
-  updateUserProfileInputSchema,
   changePasswordInputSchema,
+  changeUserPassword,
+  getUserProfile,
   type UserProfileManagementError,
+  updateUserProfile,
+  updateUserProfileInputSchema,
 } from "@/core/application/user/userProfileManagement";
 import type { User } from "@/core/domain/user/types";
 import type { ActionState } from "@/lib/actionState";

@@ -4,21 +4,21 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { context } from "@/context";
 import {
-  getUserFavoriteRegions,
-  removeRegionFromFavorites,
-  type RegionFavoriteApplicationError,
-} from "@/core/application/region/manageFavorites";
-import {
   getUserFavoritePlaces,
-  removePlaceFromFavorites,
   type PlaceFavoriteApplicationError,
+  removePlaceFromFavorites,
 } from "@/core/application/place/manageFavorites";
+import {
+  getUserFavoriteRegions,
+  type RegionFavoriteApplicationError,
+  removeRegionFromFavorites,
+} from "@/core/application/region/manageFavorites";
 import {
   getCurrentUser,
   type SessionManagementError,
 } from "@/core/application/user/sessionManagement";
-import type { RegionWithStats } from "@/core/domain/region/types";
 import type { PlaceWithStats } from "@/core/domain/place/types";
+import type { RegionWithStats } from "@/core/domain/region/types";
 import type { ActionState } from "@/lib/actionState";
 
 // Get User Favorite Regions Action

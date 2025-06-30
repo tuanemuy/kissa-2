@@ -1,16 +1,16 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { context } from "@/context";
 import {
-  listUserCheckins,
   getCheckinDetails,
   type ListUserCheckinsError,
+  listUserCheckins,
 } from "@/core/application/checkin/listUserCheckins";
 import {
   getCurrentUser,
   type SessionManagementError,
 } from "@/core/application/user/sessionManagement";
-import { context } from "@/context";
 import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type { ActionState } from "@/lib/actionState";
 

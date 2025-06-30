@@ -1,15 +1,15 @@
-import { describe, expect, it } from "vitest";
 import { ok } from "neverthrow";
-import {
-  getUserProfile,
-  updateUserProfile,
-  changeUserPassword,
-  UserProfileManagementError,
-  type UpdateUserProfileInput,
-  type ChangePasswordInput,
-} from "./userProfileManagement";
-import type { Context } from "../context";
+import { describe, expect, it } from "vitest";
 import type { User } from "@/core/domain/user/types";
+import type { Context } from "../context";
+import {
+  type ChangePasswordInput,
+  changeUserPassword,
+  getUserProfile,
+  type UpdateUserProfileInput,
+  UserProfileManagementError,
+  updateUserProfile,
+} from "./userProfileManagement";
 
 const mockUser: User = {
   id: "user-1",

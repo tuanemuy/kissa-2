@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  getUserFavoriteRegionsAction,
   getUserFavoritePlacesAction,
+  getUserFavoriteRegionsAction,
 } from "@/actions/favorites";
 import { UserLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";

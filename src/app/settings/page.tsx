@@ -1,11 +1,11 @@
-import { Settings, User, Lock } from "lucide-react";
+import { Lock, Settings, User } from "lucide-react";
 import type { Metadata } from "next";
 import { getUserProfileAction } from "@/actions/settings";
 import { UserLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileForm } from "./ProfileForm";
 import { PasswordChangeForm } from "./PasswordChangeForm";
+import { ProfileForm } from "./ProfileForm";
 
 export const metadata: Metadata = {
   title: "アカウント設定 - Kissa",

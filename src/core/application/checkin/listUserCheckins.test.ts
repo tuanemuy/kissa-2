@@ -1,15 +1,15 @@
-import { describe, expect, it } from "vitest";
 import { err, ok } from "neverthrow";
-import {
-  listUserCheckins,
-  getUserRecentCheckins,
-  getCheckinDetails,
-  ListUserCheckinsError,
-  type ListUserCheckinsInput,
-} from "./listUserCheckins";
-import type { Context } from "../context";
+import { describe, expect, it } from "vitest";
 import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type { User } from "@/core/domain/user/types";
+import type { Context } from "../context";
+import {
+  getCheckinDetails,
+  getUserRecentCheckins,
+  ListUserCheckinsError,
+  type ListUserCheckinsInput,
+  listUserCheckins,
+} from "./listUserCheckins";
 
 const mockUser: User = {
   id: "user-1",

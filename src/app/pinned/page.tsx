@@ -7,8 +7,8 @@ import { UserLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UnpinButton } from "./UnpinButton";
 import { ReorderablePinnedList } from "./ReorderablePinnedList";
+import { UnpinButton } from "./UnpinButton";
 
 export const metadata: Metadata = {
   title: "ピン留め地域 - Kissa",

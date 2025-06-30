@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, startTransition } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v4";
+import { startTransition, useActionState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod/v4";
 import { updateUserProfileAction } from "@/actions/settings";
 import { Button } from "@/components/ui/button";
 import {
