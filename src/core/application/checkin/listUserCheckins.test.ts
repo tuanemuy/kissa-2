@@ -12,7 +12,7 @@ import {
 } from "./listUserCheckins";
 
 const mockUser: User = {
-  id: "user-1",
+  id: "12345678-1234-1234-1234-123456789012",
   email: "test@example.com",
   hashedPassword: "hashed-password",
   name: "Test User",
@@ -27,9 +27,9 @@ const mockUser: User = {
 };
 
 const mockCheckin: CheckinWithDetails = {
-  id: "checkin-1",
-  userId: "user-1",
-  placeId: "place-1",
+  id: "87654321-4321-4321-4321-210987654321",
+  userId: "12345678-1234-1234-1234-123456789012",
+  placeId: "11111111-1111-1111-1111-111111111111",
   comment: "Great place!",
   rating: 5,
   photos: [],
@@ -54,9 +54,9 @@ const mockCheckin: CheckinWithDetails = {
 };
 
 const createMockContext = (
-  userResult = ok(mockUser),
-  checkinsResult = ok([mockCheckin]),
-  checkinResult = ok(mockCheckin),
+  userResult: any = ok(mockUser as User | null),
+  checkinsResult: any = ok([mockCheckin] as CheckinWithDetails[]),
+  checkinResult: any = ok(mockCheckin as CheckinWithDetails | null),
 ): Context =>
   ({
     userRepository: {
@@ -73,7 +73,7 @@ describe("listUserCheckins", () => {
   it("should return user checkins successfully", async () => {
     const context = createMockContext();
     const input: ListUserCheckinsInput = {
-      userId: "user-1",
+      userId: "12345678-1234-1234-1234-123456789012",
       limit: 20,
     };
 
@@ -102,9 +102,9 @@ describe("listUserCheckins", () => {
   });
 
   it("should return error when user not found", async () => {
-    const context = createMockContext(ok(null as any as User));
+    const context = createMockContext(ok(null));
     const input: ListUserCheckinsInput = {
-      userId: "user-1",
+      userId: "12345678-1234-1234-1234-123456789012",
       limit: 20,
     };
 
@@ -120,10 +120,10 @@ describe("listUserCheckins", () => {
   it("should return error when repository fails", async () => {
     const context = createMockContext(
       ok(mockUser),
-      err(new Error("Database error")) as any,
+      err(new Error("Database error")),
     );
     const input: ListUserCheckinsInput = {
-      userId: "user-1",
+      userId: "12345678-1234-1234-1234-123456789012",
       limit: 20,
     };
 
@@ -141,7 +141,10 @@ describe("getUserRecentCheckins", () => {
   it("should return recent checkins successfully", async () => {
     const context = createMockContext();
 
-    const result = await getUserRecentCheckins(context, "user-1");
+    const result = await getUserRecentCheckins(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+    );
 
     expect(result.isOk()).toBe(true);
     if (result.isOk()) {
@@ -154,7 +157,11 @@ describe("getCheckinDetails", () => {
   it("should return checkin details successfully", async () => {
     const context = createMockContext();
 
-    const result = await getCheckinDetails(context, "checkin-1", "user-1");
+    const result = await getCheckinDetails(
+      context,
+      "87654321-4321-4321-4321-210987654321",
+      "12345678-1234-1234-1234-123456789012",
+    );
 
     expect(result.isOk()).toBe(true);
     if (result.isOk()) {
@@ -178,10 +185,14 @@ describe("getCheckinDetails", () => {
     const context = createMockContext(
       ok(mockUser),
       ok([mockCheckin]),
-      ok(null as any as CheckinWithDetails),
+      ok(null),
     );
 
-    const result = await getCheckinDetails(context, "checkin-1", "user-1");
+    const result = await getCheckinDetails(
+      context,
+      "87654321-4321-4321-4321-210987654321",
+      "12345678-1234-1234-1234-123456789012",
+    );
 
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
@@ -202,7 +213,11 @@ describe("getCheckinDetails", () => {
       ok(privateCheckin),
     );
 
-    const result = await getCheckinDetails(context, "checkin-1", "user-1");
+    const result = await getCheckinDetails(
+      context,
+      "87654321-4321-4321-4321-210987654321",
+      "12345678-1234-1234-1234-123456789012",
+    );
 
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {

@@ -4,7 +4,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getRegionByIdAction } from "@/actions/region";
+import { AuthPrompt } from "@/components/auth/AuthPrompt";
 import { PlaceList } from "@/components/place/PlaceList";
+import { PlaceSearchResults } from "@/components/place/PlaceSearchResults";
 import { FavoriteButton } from "@/components/region/FavoriteButton";
 import { PinButton } from "@/components/region/PinButton";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +109,11 @@ export default async function RegionDetailPage({
             </div>
           )}
 
+          {/* Place Search */}
+          <div className="mb-8">
+            <PlaceSearchResults regionId={region.id} regionName={region.name} />
+          </div>
+
           {/* Places in Region */}
           <div>
             <div className="flex items-center justify-between mb-6">
@@ -170,14 +177,30 @@ export default async function RegionDetailPage({
             </div>
 
             <div className="mt-6 space-y-2">
-              <FavoriteButton
-                regionId={region.id}
-                isAuthenticated={isAuthenticated}
-              />
-              <PinButton
-                regionId={region.id}
-                isAuthenticated={isAuthenticated}
-              />
+              {isAuthenticated ? (
+                <>
+                  <FavoriteButton
+                    regionId={region.id}
+                    isAuthenticated={isAuthenticated}
+                  />
+                  <PinButton
+                    regionId={region.id}
+                    isAuthenticated={isAuthenticated}
+                  />
+                </>
+              ) : (
+                <AuthPrompt
+                  title="この地域をもっと楽しむ"
+                  description="アカウントを作成してお気に入りに追加しよう"
+                  features={[
+                    "地域をお気に入りに追加",
+                    "地域をピン留めして素早くアクセス",
+                    "場所にチェックイン",
+                  ]}
+                  variant="compact"
+                  currentPath={`/regions/${region.id}`}
+                />
+              )}
             </div>
           </div>
         </div>

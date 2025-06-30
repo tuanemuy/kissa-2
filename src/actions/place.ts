@@ -8,11 +8,13 @@ import {
   getPlacesByRegion,
   listPlaces,
 } from "@/core/application/place/listPlaces";
+import { searchPlaces } from "@/core/application/place/searchPlaces";
 import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type {
   ListPlacesQuery,
   PlaceCategory,
   PlaceWithStats,
+  SearchPlacesQuery,
 } from "@/core/domain/place/types";
 import type { Coordinates } from "@/core/domain/region/types";
 import type { ActionState } from "@/lib/actionState";
@@ -243,4 +245,32 @@ export async function getPlaceCheckinsAction(
       },
     };
   }
+}
+
+// Search places
+export async function searchPlacesAction(
+  query: SearchPlacesQuery,
+  userId?: string,
+): Promise<
+  ActionState<{
+    items: PlaceWithStats[];
+    count: number;
+    totalPages: number;
+    currentPage: number;
+    searchTerm: string;
+  }>
+> {
+  const result = await searchPlaces(context, { query, userId });
+
+  if (result.isErr()) {
+    return {
+      result: { items: [], count: 0, totalPages: 0, currentPage: 1, searchTerm: query.keyword || "" },
+      error: result.error,
+    };
+  }
+
+  return {
+    result: result.value,
+    error: null,
+  };
 }

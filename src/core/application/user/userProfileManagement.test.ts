@@ -12,7 +12,7 @@ import {
 } from "./userProfileManagement";
 
 const mockUser: User = {
-  id: "user-1",
+  id: "12345678-1234-1234-1234-123456789012",
   email: "test@example.com",
   hashedPassword: "hashed-password",
   name: "Test User",
@@ -27,7 +27,7 @@ const mockUser: User = {
 };
 
 const createMockContext = (
-  userResult = ok(mockUser),
+  userResult: any = ok(mockUser as User | null),
   updateResult = ok(mockUser),
   passwordVerifyResult = ok(true),
   hashResult = ok("new-hashed-password"),
@@ -49,7 +49,10 @@ describe("getUserProfile", () => {
   it("should return user profile successfully", async () => {
     const context = createMockContext();
 
-    const result = await getUserProfile(context, "user-1");
+    const result = await getUserProfile(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+    );
 
     expect(result.isOk()).toBe(true);
     if (result.isOk()) {
@@ -70,9 +73,12 @@ describe("getUserProfile", () => {
   });
 
   it("should return error when user not found", async () => {
-    const context = createMockContext(ok(null as any as User));
+    const context = createMockContext(ok(null));
 
-    const result = await getUserProfile(context, "user-1");
+    const result = await getUserProfile(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+    );
 
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
@@ -90,7 +96,11 @@ describe("updateUserProfile", () => {
       name: "Updated Name",
     };
 
-    const result = await updateUserProfile(context, "user-1", input);
+    const result = await updateUserProfile(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+      input,
+    );
 
     expect(result.isOk()).toBe(true);
     if (result.isOk()) {
@@ -114,12 +124,16 @@ describe("updateUserProfile", () => {
   });
 
   it("should return error when user not found", async () => {
-    const context = createMockContext(ok(null as any as User));
+    const context = createMockContext(ok(null));
     const input: UpdateUserProfileInput = {
       name: "Updated Name",
     };
 
-    const result = await updateUserProfile(context, "user-1", input);
+    const result = await updateUserProfile(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+      input,
+    );
 
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
@@ -137,7 +151,11 @@ describe("changeUserPassword", () => {
       newPassword: "new-password",
     };
 
-    const result = await changeUserPassword(context, "user-1", input);
+    const result = await changeUserPassword(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+      input,
+    );
 
     expect(result.isOk()).toBe(true);
   });
@@ -169,7 +187,11 @@ describe("changeUserPassword", () => {
       newPassword: "new-password",
     };
 
-    const result = await changeUserPassword(context, "user-1", input);
+    const result = await changeUserPassword(
+      context,
+      "12345678-1234-1234-1234-123456789012",
+      input,
+    );
 
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {

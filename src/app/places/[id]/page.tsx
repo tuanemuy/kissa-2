@@ -16,6 +16,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPlaceByIdAction } from "@/actions/place";
+import { AuthPrompt } from "@/components/auth/AuthPrompt";
 import { CheckinButton } from "@/components/place/CheckinButton";
 import { CheckinList } from "@/components/place/CheckinList";
 import { FavoriteButton } from "@/components/place/FavoriteButton";
@@ -292,15 +293,31 @@ export default async function PlaceDetailPage({
             <Separator />
 
             <div className="space-y-2">
-              <FavoriteButton
-                placeId={place.id}
-                isAuthenticated={isAuthenticated}
-              />
-              <CheckinButton
-                placeId={place.id}
-                placeName={place.name}
-                isAuthenticated={isAuthenticated}
-              />
+              {isAuthenticated ? (
+                <>
+                  <FavoriteButton
+                    placeId={place.id}
+                    isAuthenticated={isAuthenticated}
+                  />
+                  <CheckinButton
+                    placeId={place.id}
+                    placeName={place.name}
+                    isAuthenticated={isAuthenticated}
+                  />
+                </>
+              ) : (
+                <AuthPrompt
+                  title="この場所をもっと楽しむ"
+                  description="アカウントを作成してチェックインしよう"
+                  features={[
+                    "場所にチェックイン",
+                    "お気に入りに追加",
+                    "レビューを投稿",
+                  ]}
+                  variant="compact"
+                  currentPath={`/places/${place.id}`}
+                />
+              )}
             </div>
 
             {place.regionName && (
