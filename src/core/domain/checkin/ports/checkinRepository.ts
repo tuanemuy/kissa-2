@@ -1,5 +1,6 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { DATABASE_ERROR_CODES } from "@/lib/errorCodes";
 import type {
   Checkin,
   CheckinPhoto,
@@ -13,10 +14,10 @@ import type {
 } from "../types";
 
 export class CheckinRepositoryError extends AnyError {
-  override readonly name = "CheckinRepositoryError";
+  override readonly name: string = "CheckinRepositoryError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, DATABASE_ERROR_CODES.QUERY_FAILED, cause);
   }
 }
 

@@ -1,16 +1,17 @@
 import { err, ok, type Result } from "neverthrow";
 import type { z } from "zod/v4";
 import { AnyError } from "./error";
+import { GENERIC_ERROR_CODES } from "./errorCodes";
 
 export class ValidationError<T> extends AnyError {
-  override readonly name = "ValidationError";
+  override readonly name: string = "ValidationError";
 
   constructor(
     public readonly error: z.ZodError<T>,
     override readonly message: string,
     cause?: unknown,
   ) {
-    super(message, undefined, cause);
+    super(message, GENERIC_ERROR_CODES.VALIDATION_ERROR, cause);
   }
 }
 

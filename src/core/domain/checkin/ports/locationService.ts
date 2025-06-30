@@ -1,13 +1,14 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { EXTERNAL_SERVICE_ERROR_CODES } from "@/lib/errorCodes";
 import type { Coordinates } from "../../region/types";
 import type { ValidateLocationParams } from "../types";
 
 export class LocationServiceError extends AnyError {
-  override readonly name = "LocationServiceError";
+  override readonly name: string = "LocationServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, EXTERNAL_SERVICE_ERROR_CODES.LOCATION_SERVICE_FAILED, cause);
   }
 }
 

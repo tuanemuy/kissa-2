@@ -1,12 +1,13 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { AUTH_ERROR_CODES } from "@/lib/errorCodes";
 import type { LoginCredentials, User } from "../types";
 
 export class AuthServiceError extends AnyError {
-  override readonly name = "AuthServiceError";
+  override readonly name: string = "AuthServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, AUTH_ERROR_CODES.AUTHENTICATION_REQUIRED, cause);
   }
 }
 

@@ -4,13 +4,14 @@ import type { Place } from "@/core/domain/place/types";
 import type { Region } from "@/core/domain/region/types";
 import type { User } from "@/core/domain/user/types";
 import { AnyError } from "@/lib/error";
+import { ADMIN_ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
 
 export class AdminContentManagementError extends AnyError {
-  override readonly name = "AdminContentManagementError";
+  override readonly name: string = "AdminContentManagementError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, ADMIN_ERROR_CODES.ADMIN_PERMISSION_REQUIRED, cause);
   }
 }
 

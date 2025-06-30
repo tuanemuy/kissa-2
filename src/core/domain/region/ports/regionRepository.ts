@@ -1,5 +1,6 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { DATABASE_ERROR_CODES } from "@/lib/errorCodes";
 import type {
   AddRegionToFavoritesParams,
   CreateRegionParams,
@@ -16,10 +17,10 @@ import type {
 } from "../types";
 
 export class RegionRepositoryError extends AnyError {
-  override readonly name = "RegionRepositoryError";
+  override readonly name: string = "RegionRepositoryError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, DATABASE_ERROR_CODES.QUERY_FAILED, cause);
   }
 }
 

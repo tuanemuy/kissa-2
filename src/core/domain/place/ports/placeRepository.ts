@@ -1,5 +1,6 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { DATABASE_ERROR_CODES } from "@/lib/errorCodes";
 import type { Coordinates } from "../../region/types";
 import type {
   AddPlaceToFavoritesParams,
@@ -18,10 +19,10 @@ import type {
 } from "../types";
 
 export class PlaceRepositoryError extends AnyError {
-  override readonly name = "PlaceRepositoryError";
+  override readonly name: string = "PlaceRepositoryError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, DATABASE_ERROR_CODES.QUERY_FAILED, cause);
   }
 }
 

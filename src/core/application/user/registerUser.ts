@@ -2,13 +2,14 @@ import { err, ok, type Result } from "neverthrow";
 import { z } from "zod/v4";
 import type { User } from "@/core/domain/user/types";
 import { AnyError } from "@/lib/error";
+import { USER_ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
 
 export class RegisterUserError extends AnyError {
-  override readonly name = "RegisterUserError";
+  override readonly name: string = "RegisterUserError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, USER_ERROR_CODES.USER_ALREADY_EXISTS, cause);
   }
 }
 

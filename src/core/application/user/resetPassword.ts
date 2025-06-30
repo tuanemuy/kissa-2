@@ -1,12 +1,13 @@
 import { err, ok, type Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { USER_ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
 
 export class PasswordResetApplicationError extends AnyError {
-  override readonly name = "PasswordResetApplicationError";
+  override readonly name: string = "PasswordResetApplicationError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, USER_ERROR_CODES.USER_NOT_FOUND, cause);
   }
 }
 

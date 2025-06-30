@@ -1,11 +1,12 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { EXTERNAL_SERVICE_ERROR_CODES } from "@/lib/errorCodes";
 
 export class StorageServiceError extends AnyError {
-  override readonly name = "StorageServiceError";
+  override readonly name: string = "StorageServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, EXTERNAL_SERVICE_ERROR_CODES.STORAGE_SERVICE_FAILED, cause);
   }
 }
 

@@ -1,11 +1,12 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
+import { EXTERNAL_SERVICE_ERROR_CODES } from "@/lib/errorCodes";
 
 export class EmailServiceError extends AnyError {
-  override readonly name = "EmailServiceError";
+  override readonly name: string = "EmailServiceError";
 
   constructor(message: string, cause?: unknown) {
-    super(message, undefined, cause);
+    super(message, EXTERNAL_SERVICE_ERROR_CODES.EMAIL_SERVICE_FAILED, cause);
   }
 }
 
