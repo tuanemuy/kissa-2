@@ -2,6 +2,9 @@ import { Heart, MapPin, Pin, Plus, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentUserAction } from "@/actions/auth";
+import { getUserCheckinsAction } from "@/actions/checkins";
+import { getUserFavoriteRegionsAction } from "@/actions/favorites";
+import { getUserPinnedRegionsAction } from "@/actions/pinned";
 import { UserLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,28 @@ export default async function DashboardPage() {
 
   const userDisplayName = UserDomain.getDisplayName(user);
 
+  // Fetch user data in parallel
+  const [
+    { result: favoriteRegions = [] },
+    { result: pinnedRegions = [] },
+    { result: recentCheckins = [] },
+  ] = await Promise.all([
+    getUserFavoriteRegionsAction(),
+    getUserPinnedRegionsAction(),
+    getUserCheckinsAction(20),
+  ]);
+
+  // Calculate statistics
+  const favoriteRegionsCount = favoriteRegions.length;
+  const pinnedRegionsCount = pinnedRegions.length;
+  const totalCheckinsCount = recentCheckins.length;
+
+  // Get unique places from checkins to calculate discovered places
+  const discoveredPlacesSet = new Set(
+    recentCheckins.map((checkin) => checkin.placeId),
+  );
+  const discoveredPlacesCount = discoveredPlacesSet.size;
+
   return (
     <UserLayout>
       <div className="space-y-8">
@@ -50,8 +75,8 @@ export default async function DashboardPage() {
               <Heart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">+2 今月追加</p>
+              <div className="text-2xl font-bold">{favoriteRegionsCount}</div>
+              <p className="text-xs text-muted-foreground">お気に入り登録中</p>
             </CardContent>
           </Card>
 
@@ -61,7 +86,7 @@ export default async function DashboardPage() {
               <Pin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{pinnedRegionsCount}</div>
               <p className="text-xs text-muted-foreground">よく見る地域</p>
             </CardContent>
           </Card>
@@ -74,8 +99,8 @@ export default async function DashboardPage() {
               <MapPin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">47</div>
-              <p className="text-xs text-muted-foreground">今月 8 回</p>
+              <div className="text-2xl font-bold">{totalCheckinsCount}</div>
+              <p className="text-xs text-muted-foreground">総チェックイン数</p>
             </CardContent>
           </Card>
 
@@ -87,8 +112,8 @@ export default async function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">156</div>
-              <p className="text-xs text-muted-foreground">総数</p>
+              <div className="text-2xl font-bold">{discoveredPlacesCount}</div>
+              <p className="text-xs text-muted-foreground">ユニーク場所数</p>
             </CardContent>
           </Card>
         </div>
@@ -109,27 +134,28 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <PinnedRegionCard
-                  name="渋谷区"
-                  description="東京の中心地、ショッピングとエンターテイメントの拠点"
-                  visitCount={23}
-                  lastVisit="2日前"
-                  href="/regions/1"
-                />
-                <PinnedRegionCard
-                  name="京都市東山区"
-                  description="歴史と文化が息づく古都の中心地"
-                  visitCount={8}
-                  lastVisit="1週間前"
-                  href="/regions/2"
-                />
-                <PinnedRegionCard
-                  name="大阪市北区"
-                  description="グルメとビジネスの街"
-                  visitCount={15}
-                  lastVisit="3日前"
-                  href="/regions/3"
-                />
+                {pinnedRegions.length > 0 ? (
+                  pinnedRegions
+                    .slice(0, 3)
+                    .map((region) => (
+                      <PinnedRegionCard
+                        key={region.id}
+                        name={region.name}
+                        description={region.description || ""}
+                        visitCount={region.placeCount || 0}
+                        lastVisit="最近"
+                        href={`/regions/${region.id}`}
+                      />
+                    ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Pin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>ピン留めした地域がありません</p>
+                    <p className="text-sm">
+                      気になる地域をピン留めしてみましょう
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="mt-4 pt-4 border-t">
                 <Button variant="ghost" className="w-full" asChild>
@@ -149,26 +175,30 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <ActivityItem
-                  type="checkin"
-                  description="代官山のカフェ「Blue Bottle Coffee」でチェックイン"
-                  time="2時間前"
-                />
-                <ActivityItem
-                  type="favorite"
-                  description="「鎌倉市」をお気に入りに追加"
-                  time="1日前"
-                />
-                <ActivityItem
-                  type="pin"
-                  description="「新宿区」をピン留め"
-                  time="3日前"
-                />
-                <ActivityItem
-                  type="checkin"
-                  description="六本木の「森美術館」でチェックイン"
-                  time="1週間前"
-                />
+                {recentCheckins.length > 0 ? (
+                  recentCheckins.slice(0, 4).map((checkin) => (
+                    <ActivityItem
+                      key={checkin.id}
+                      type="checkin"
+                      description={`${checkin.regionName || "地域"}の「${checkin.placeName || "場所"}」でチェックイン`}
+                      time={new Date(checkin.createdAt).toLocaleDateString(
+                        "ja-JP",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>まだアクティビティがありません</p>
+                    <p className="text-sm">場所にチェックインしてみましょう</p>
+                  </div>
+                )}
               </div>
               <div className="mt-4 pt-4 border-t">
                 <Button variant="ghost" className="w-full" asChild>

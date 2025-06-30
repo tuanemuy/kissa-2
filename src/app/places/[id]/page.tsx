@@ -1,8 +1,7 @@
 import {
-  Clock,
   ExternalLink,
+  Flag,
   Globe,
-  Heart,
   Mail,
   MapPin,
   Phone,
@@ -17,6 +16,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPlaceByIdAction } from "@/actions/place";
 import { AuthPrompt } from "@/components/auth/AuthPrompt";
+import { ReportModal } from "@/components/common/ReportModal";
 import { CheckinButton } from "@/components/place/CheckinButton";
 import { CheckinList } from "@/components/place/CheckinList";
 import { FavoriteButton } from "@/components/place/FavoriteButton";
@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { context } from "@/context";
 import { getCurrentUser } from "@/core/application/user/sessionManagement";
+import { getCategoryDisplayName } from "@/lib/categoryUtils";
 
 interface PlaceDetailPageProps {
   params: Promise<{ id: string }>;
@@ -302,6 +303,7 @@ export default async function PlaceDetailPage({
                   <CheckinButton
                     placeId={place.id}
                     placeName={place.name}
+                    placeCoordinates={place.coordinates}
                     isAuthenticated={isAuthenticated}
                   />
                 </>
@@ -318,6 +320,25 @@ export default async function PlaceDetailPage({
                   currentPath={`/places/${place.id}`}
                 />
               )}
+
+              <Separator />
+
+              {/* Report Button */}
+              <ReportModal
+                contentType="place"
+                contentId={place.id}
+                contentTitle={place.name}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-muted-foreground hover:text-red-600"
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    この場所を通報
+                  </Button>
+                }
+              />
             </div>
 
             {place.regionName && (
@@ -339,27 +360,6 @@ export default async function PlaceDetailPage({
       </div>
     </main>
   );
-}
-
-function getCategoryDisplayName(category: string): string {
-  const categoryMap: Record<string, string> = {
-    restaurant: "レストラン",
-    cafe: "カフェ",
-    hotel: "ホテル",
-    shopping: "ショッピング",
-    entertainment: "エンターテイメント",
-    culture: "文化施設",
-    nature: "自然",
-    historical: "歴史的建造物",
-    religious: "宗教施設",
-    transportation: "交通機関",
-    hospital: "医療機関",
-    education: "教育機関",
-    office: "オフィス",
-    other: "その他",
-  };
-
-  return categoryMap[category] || category;
 }
 
 function PhotoGallery({

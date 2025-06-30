@@ -60,6 +60,8 @@ Next.js 15.2.1 application code using:
     - `src/app/styles/index.css`: Entry point for global styles
 - Server Actions
     - `src/actions/${domain}.ts`: Server actions for handling application services
+- Asynchronous Data Fetching
+    - Fetch data asynchronously at the component level, not at the page level
 
 ### Example Implementation
 

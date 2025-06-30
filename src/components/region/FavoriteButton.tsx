@@ -1,7 +1,7 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useEffect } from "react";
 import { toast } from "sonner";
 import { addRegionToFavoritesAction } from "@/actions/favorites";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,7 @@ export function FavoriteButton({
 
   const handleClick = () => {
     if (!isAuthenticated) {
-      window.location.href =
-        "/auth/login?redirect=" + encodeURIComponent(window.location.pathname);
+      window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
 
@@ -33,21 +32,23 @@ export function FavoriteButton({
   };
 
   // Show success/error toasts based on action state
-  if (actionState.error && isPending === false) {
-    if (actionState.error.message === "Region is already favorited") {
-      toast.info("この地域は既にお気に入りに追加されています。");
-    } else {
-      toast.error("お気に入りへの追加に失敗しました。");
+  useEffect(() => {
+    if (actionState.error && isPending === false) {
+      if (actionState.error.message === "Region is already favorited") {
+        toast.info("この地域は既にお気に入りに追加されています。");
+      } else {
+        toast.error("お気に入りへの追加に失敗しました。");
+      }
     }
-  }
 
-  if (
-    !actionState.error &&
-    isPending === false &&
-    actionState.result !== undefined
-  ) {
-    toast.success("お気に入りに追加しました。");
-  }
+    if (
+      !actionState.error &&
+      isPending === false &&
+      actionState.result !== undefined
+    ) {
+      toast.success("お気に入りに追加しました。");
+    }
+  }, [actionState, isPending]);
 
   return (
     <Button

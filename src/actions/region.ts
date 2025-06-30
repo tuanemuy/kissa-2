@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod/v4";
+import { getCurrentUserAction } from "@/actions/auth";
 import { context } from "@/context";
 import {
   CreateRegionError,
@@ -15,15 +16,21 @@ import {
   listRegions,
 } from "@/core/application/region/listRegions";
 import {
+  advancedSearchRegions,
   getRegionSearchSuggestions,
   type SearchRegionsError,
   searchRegions,
 } from "@/core/application/region/searchRegions";
-import type {
-  ListRegionsQuery,
-  Region,
-  RegionWithStats,
-  SearchRegionsQuery,
+import {
+  UpdateRegionError,
+  updateRegion,
+} from "@/core/application/region/updateRegion";
+import {
+  type ListRegionsQuery,
+  type Region,
+  type RegionWithStats,
+  type SearchRegionsQuery,
+  updateRegionSchema,
 } from "@/core/domain/region/types";
 import type { ActionState } from "@/lib/actionState";
 import { type ValidationError, validate } from "@/lib/validation";
@@ -186,12 +193,12 @@ export async function createRegionAction(
     ValidationError<z.infer<typeof createRegionInputSchema>> | CreateRegionError
   >
 > {
-  const userId = formData.get("userId") as string;
+  const { result: user, error: userError } = await getCurrentUserAction();
 
-  if (!userId) {
+  if (userError || !user) {
     return {
       result: prevState.result,
-      error: new CreateRegionError("User ID is required"),
+      error: new CreateRegionError("Authentication required"),
     };
   }
 
@@ -243,7 +250,7 @@ export async function createRegionAction(
     };
   }
 
-  const result = await createRegion(context, userId, validation.value);
+  const result = await createRegion(context, user.id, validation.value);
 
   if (result.isErr()) {
     return {
@@ -254,6 +261,104 @@ export async function createRegionAction(
 
   revalidatePath("/editor/regions");
   revalidatePath("/regions");
+  redirect(`/regions/${result.value.id}`);
+}
+
+// Update region (editor only)
+export async function updateRegionAction(
+  prevState: ActionState<
+    Region,
+    ValidationError<z.infer<typeof updateRegionSchema>> | UpdateRegionError
+  >,
+  formData: FormData,
+): Promise<
+  ActionState<
+    Region,
+    ValidationError<z.infer<typeof updateRegionSchema>> | UpdateRegionError
+  >
+> {
+  const { result: user, error: userError } = await getCurrentUserAction();
+
+  if (userError || !user) {
+    return {
+      result: prevState.result,
+      error: new UpdateRegionError("Authentication required"),
+    };
+  }
+
+  const regionId = formData.get("regionId") as string;
+
+  if (!regionId) {
+    return {
+      result: prevState.result,
+      error: new UpdateRegionError("Region ID is required"),
+    };
+  }
+
+  const images = [];
+  const imageUrls = formData.getAll("images") as string[];
+  for (const url of imageUrls) {
+    if (url?.trim()) {
+      images.push(url.trim());
+    }
+  }
+
+  const tags = [];
+  const tagValues = formData.getAll("tags") as string[];
+  for (const tag of tagValues) {
+    if (tag?.trim()) {
+      tags.push(tag.trim());
+    }
+  }
+
+  const coordinatesData = {
+    latitude: formData.get("latitude"),
+    longitude: formData.get("longitude"),
+  };
+
+  let coordinates: { latitude: number; longitude: number } | undefined;
+  if (coordinatesData.latitude && coordinatesData.longitude) {
+    coordinates = {
+      latitude: Number.parseFloat(coordinatesData.latitude as string),
+      longitude: Number.parseFloat(coordinatesData.longitude as string),
+    };
+  }
+
+  const input = {
+    name: formData.get("name") as string,
+    description: (formData.get("description") as string) || undefined,
+    shortDescription: (formData.get("shortDescription") as string) || undefined,
+    coordinates,
+    address: (formData.get("address") as string) || undefined,
+    coverImage: (formData.get("coverImage") as string) || undefined,
+    images,
+    tags,
+  };
+
+  const validation = validate(updateRegionSchema, input);
+  if (validation.isErr()) {
+    return {
+      result: prevState.result,
+      error: validation.error,
+    };
+  }
+
+  const result = await updateRegion(context, {
+    regionId,
+    userId: user.id,
+    params: validation.value,
+  });
+
+  if (result.isErr()) {
+    return {
+      result: prevState.result,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/editor/regions");
+  revalidatePath("/regions");
+  revalidatePath(`/regions/${regionId}`);
   redirect(`/regions/${result.value.id}`);
 }
 
@@ -328,6 +433,55 @@ export async function simpleSearchRegionsAction(
         totalPages: 0,
         currentPage: 1,
         searchTerm: "",
+      },
+      error: result.error,
+    };
+  }
+
+  return {
+    result: result.value,
+    error: null,
+  };
+}
+
+// Advanced search with location filtering
+export async function advancedSearchRegionsAction(
+  filters: {
+    keyword?: string;
+    tags?: string[];
+    location?: {
+      latitude: number;
+      longitude: number;
+      radiusKm: number;
+    };
+    pagination: {
+      page: number;
+      limit: number;
+    };
+  },
+  userId?: string,
+): Promise<
+  ActionState<
+    {
+      items: RegionWithStats[];
+      count: number;
+      totalPages: number;
+      currentPage: number;
+      searchTerm: string;
+    },
+    SearchRegionsError
+  >
+> {
+  const result = await advancedSearchRegions(context, filters, userId);
+
+  if (result.isErr()) {
+    return {
+      result: {
+        items: [],
+        count: 0,
+        totalPages: 0,
+        currentPage: 1,
+        searchTerm: filters.keyword || "",
       },
       error: result.error,
     };

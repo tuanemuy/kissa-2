@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 import { getFeaturedRegionsAction } from "@/actions/region";
+import { PublicLayout } from "@/components/layout";
 import { RegionList } from "@/components/region/RegionList";
 import { RegionSearchForm } from "@/components/region/RegionSearchForm";
 
@@ -25,37 +26,39 @@ export default async function RegionsPage({ searchParams }: RegionsPageProps) {
   const limit = Number.parseInt(params.limit || "20", 10);
 
   return (
-    <main className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">地域を探索</h1>
-        <p className="text-muted-foreground text-lg">
-          日本全国の魅力的な地域を発見し、お気に入りの場所を見つけましょう
-        </p>
-      </div>
-
-      <div className="mb-8">
-        <RegionSearchForm initialKeyword={keyword} />
-      </div>
-
-      {keyword ? (
-        <div className="mb-4">
-          <h2 className="text-2xl font-semibold">「{keyword}」の検索結果</h2>
+    <PublicLayout>
+      <main className="container mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">地域を探索</h1>
+          <p className="text-muted-foreground text-lg">
+            日本全国の魅力的な地域を発見し、お気に入りの場所を見つけましょう
+          </p>
         </div>
-      ) : null}
 
-      <Suspense fallback={<RegionListSkeleton />}>
-        <RegionList keyword={keyword} page={page} limit={limit} />
-      </Suspense>
-
-      {!keyword && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-semibold mb-6">注目の地域</h2>
-          <Suspense fallback={<FeaturedRegionsSkeleton />}>
-            <FeaturedRegions />
-          </Suspense>
+        <div className="mb-8">
+          <RegionSearchForm initialKeyword={keyword} />
         </div>
-      )}
-    </main>
+
+        {keyword ? (
+          <div className="mb-4">
+            <h2 className="text-2xl font-semibold">「{keyword}」の検索結果</h2>
+          </div>
+        ) : null}
+
+        <Suspense fallback={<RegionListSkeleton />}>
+          <RegionList keyword={keyword} page={page} limit={limit} />
+        </Suspense>
+
+        {!keyword && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-semibold mb-6">注目の地域</h2>
+            <Suspense fallback={<FeaturedRegionsSkeleton />}>
+              <FeaturedRegions />
+            </Suspense>
+          </div>
+        )}
+      </main>
+    </PublicLayout>
   );
 }
 

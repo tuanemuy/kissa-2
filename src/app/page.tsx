@@ -1,33 +1,15 @@
 import Image from "next/image";
 import { Suspense } from "react";
 import { getFeaturedRegionsAction } from "@/actions/region";
+import { FeatureShowcase } from "@/components/home/FeatureShowcase";
+import { HeroSection } from "@/components/home/HeroSection";
+import { PublicLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <main>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 to-secondary/10 py-16 md:py-24">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            地域を探索し、
-            <br />
-            お気に入りの場所を発見
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Kissaで日本全国の魅力的な地域と場所を探索し、
-            あなただけのお気に入りリストを作成しましょう
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <a href="/regions">地域を探索する</a>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <a href="/auth/register">今すぐ始める</a>
-            </Button>
-          </div>
-        </div>
-      </section>
+    <PublicLayout>
+      <HeroSection />
 
       {/* Featured Regions */}
       <section className="py-16 md:py-24">
@@ -51,47 +33,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="bg-muted/50 py-16 md:py-24">
-        <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Kissaの特徴</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🗺️</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">地域探索</h3>
-              <p className="text-muted-foreground">
-                日本全国の魅力的な地域を発見し、詳細な情報を確認できます
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📍</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">チェックイン</h3>
-              <p className="text-muted-foreground">
-                訪れた場所にチェックインして、思い出を記録しましょう
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">⭐</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">お気に入り管理</h3>
-              <p className="text-muted-foreground">
-                気に入った地域や場所をお気に入りに追加して管理できます
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+      <FeatureShowcase />
+    </PublicLayout>
   );
 }
 

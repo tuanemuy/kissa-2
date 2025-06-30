@@ -1,6 +1,19 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import type { z } from "zod/v4";
+import { getCurrentUserAction } from "@/actions/auth";
 import { context } from "@/context";
+import {
+  CreatePlaceError,
+  createPlace,
+  createPlaceInputSchema,
+} from "@/core/application/place/createPlace";
+import {
+  DeletePlaceError,
+  deletePlace,
+} from "@/core/application/place/deletePlace";
 import {
   getMapLocations,
   getPlacesByCreator,
@@ -8,16 +21,26 @@ import {
   getPlacesByRegion,
   listPlaces,
 } from "@/core/application/place/listPlaces";
-import { searchPlaces } from "@/core/application/place/searchPlaces";
+import {
+  advancedSearchPlaces,
+  searchPlaces,
+} from "@/core/application/place/searchPlaces";
+import {
+  UpdatePlaceError,
+  updatePlace,
+} from "@/core/application/place/updatePlace";
 import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type {
   ListPlacesQuery,
+  Place,
   PlaceCategory,
   PlaceWithStats,
   SearchPlacesQuery,
+  UpdatePlaceParams,
 } from "@/core/domain/place/types";
 import type { Coordinates } from "@/core/domain/region/types";
 import type { ActionState } from "@/lib/actionState";
+import { type ValidationError, validate } from "@/lib/validation";
 
 // Get place by ID
 export async function getPlaceByIdAction(
@@ -264,7 +287,314 @@ export async function searchPlacesAction(
 
   if (result.isErr()) {
     return {
-      result: { items: [], count: 0, totalPages: 0, currentPage: 1, searchTerm: query.keyword || "" },
+      result: {
+        items: [],
+        count: 0,
+        totalPages: 0,
+        currentPage: 1,
+        searchTerm: query.keyword || "",
+      },
+      error: result.error,
+    };
+  }
+
+  return {
+    result: result.value,
+    error: null,
+  };
+}
+
+// Create place (editor only)
+export async function createPlaceAction(
+  prevState: ActionState<
+    Place,
+    ValidationError<z.infer<typeof createPlaceInputSchema>> | CreatePlaceError
+  >,
+  formData: FormData,
+): Promise<
+  ActionState<
+    Place,
+    ValidationError<z.infer<typeof createPlaceInputSchema>> | CreatePlaceError
+  >
+> {
+  const { result: user, error: userError } = await getCurrentUserAction();
+
+  if (userError || !user) {
+    return {
+      result: prevState.result,
+      error: new CreatePlaceError("Authentication required"),
+    };
+  }
+
+  const images = [];
+  const imageUrls = formData.getAll("images") as string[];
+  for (const url of imageUrls) {
+    if (url?.trim()) {
+      images.push(url.trim());
+    }
+  }
+
+  const tags = [];
+  const tagValues = formData.getAll("tags") as string[];
+  for (const tag of tagValues) {
+    if (tag?.trim()) {
+      tags.push(tag.trim());
+    }
+  }
+
+  const businessHours = [];
+  const businessHoursData = formData.get("businessHours") as string;
+  if (businessHoursData) {
+    try {
+      const parsed = JSON.parse(businessHoursData);
+      if (Array.isArray(parsed)) {
+        businessHours.push(...parsed);
+      }
+    } catch (_error) {
+      // Ignore invalid JSON
+    }
+  }
+
+  const coordinatesData = {
+    latitude: formData.get("latitude"),
+    longitude: formData.get("longitude"),
+  };
+
+  let coordinates: { latitude: number; longitude: number } | undefined;
+  if (coordinatesData.latitude && coordinatesData.longitude) {
+    coordinates = {
+      latitude: Number.parseFloat(coordinatesData.latitude as string),
+      longitude: Number.parseFloat(coordinatesData.longitude as string),
+    };
+  }
+
+  const input = {
+    name: formData.get("name") as string,
+    description: (formData.get("description") as string) || undefined,
+    shortDescription: (formData.get("shortDescription") as string) || undefined,
+    category: formData.get("category") as PlaceCategory,
+    regionId: formData.get("regionId") as string,
+    coordinates: coordinates || { latitude: 0, longitude: 0 },
+    address: formData.get("address") as string,
+    phone: (formData.get("phone") as string) || undefined,
+    website: (formData.get("website") as string) || undefined,
+    email: (formData.get("email") as string) || undefined,
+    coverImage: (formData.get("coverImage") as string) || undefined,
+    images,
+    tags,
+    businessHours,
+  };
+
+  const validation = validate(createPlaceInputSchema, input);
+  if (validation.isErr()) {
+    return {
+      result: prevState.result,
+      error: validation.error,
+    };
+  }
+
+  const result = await createPlace(context, user.id, validation.value);
+
+  if (result.isErr()) {
+    return {
+      result: prevState.result,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/editor/places");
+  revalidatePath("/places");
+  revalidatePath(`/regions/${input.regionId}`);
+  redirect(`/places/${result.value.id}`);
+}
+
+// Update place (editor only)
+export async function updatePlaceAction(
+  prevState: ActionState<
+    Place,
+    ValidationError<UpdatePlaceParams> | UpdatePlaceError
+  >,
+  formData: FormData,
+): Promise<
+  ActionState<Place, ValidationError<UpdatePlaceParams> | UpdatePlaceError>
+> {
+  const { result: user, error: userError } = await getCurrentUserAction();
+
+  if (userError || !user) {
+    return {
+      result: prevState.result,
+      error: new UpdatePlaceError("Authentication required"),
+    };
+  }
+
+  const placeId = formData.get("placeId") as string;
+
+  if (!placeId) {
+    return {
+      result: prevState.result,
+      error: new UpdatePlaceError("Place ID is required"),
+    };
+  }
+
+  const images = [];
+  const imageUrls = formData.getAll("images") as string[];
+  for (const url of imageUrls) {
+    if (url?.trim()) {
+      images.push(url.trim());
+    }
+  }
+
+  const tags = [];
+  const tagValues = formData.getAll("tags") as string[];
+  for (const tag of tagValues) {
+    if (tag?.trim()) {
+      tags.push(tag.trim());
+    }
+  }
+
+  const businessHours = [];
+  const businessHoursData = formData.get("businessHours") as string;
+  if (businessHoursData) {
+    try {
+      const parsed = JSON.parse(businessHoursData);
+      if (Array.isArray(parsed)) {
+        businessHours.push(...parsed);
+      }
+    } catch (_error) {
+      // Ignore invalid JSON
+    }
+  }
+
+  const coordinatesData = {
+    latitude: formData.get("latitude"),
+    longitude: formData.get("longitude"),
+  };
+
+  let coordinates: { latitude: number; longitude: number } | undefined;
+  if (coordinatesData.latitude && coordinatesData.longitude) {
+    coordinates = {
+      latitude: Number.parseFloat(coordinatesData.latitude as string),
+      longitude: Number.parseFloat(coordinatesData.longitude as string),
+    };
+  }
+
+  const params: UpdatePlaceParams = {
+    name: (formData.get("name") as string) || undefined,
+    description: (formData.get("description") as string) || undefined,
+    shortDescription: (formData.get("shortDescription") as string) || undefined,
+    category: (formData.get("category") as PlaceCategory) || undefined,
+    coordinates,
+    address: (formData.get("address") as string) || undefined,
+    phone: (formData.get("phone") as string) || undefined,
+    website: (formData.get("website") as string) || undefined,
+    email: (formData.get("email") as string) || undefined,
+    coverImage: (formData.get("coverImage") as string) || undefined,
+    images: images.length > 0 ? images : undefined,
+    tags: tags.length > 0 ? tags : undefined,
+    businessHours: businessHours.length > 0 ? businessHours : undefined,
+  };
+
+  // Remove undefined values
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined),
+  ) as UpdatePlaceParams;
+
+  const result = await updatePlace(context, {
+    placeId,
+    userId: user.id,
+    params: cleanParams,
+  });
+
+  if (result.isErr()) {
+    return {
+      result: prevState.result,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/editor/places");
+  revalidatePath("/places");
+  revalidatePath(`/places/${placeId}`);
+  revalidatePath(`/editor/places/${placeId}/edit`);
+  redirect(`/places/${result.value.id}`);
+}
+
+// Delete place (editor only)
+export async function deletePlaceAction(
+  placeId: string,
+  userId: string,
+): Promise<ActionState<void, DeletePlaceError>> {
+  if (!userId) {
+    return {
+      result: undefined,
+      error: new DeletePlaceError("User ID is required"),
+    };
+  }
+
+  if (!placeId) {
+    return {
+      result: undefined,
+      error: new DeletePlaceError("Place ID is required"),
+    };
+  }
+
+  const result = await deletePlace(context, { placeId, userId });
+
+  if (result.isErr()) {
+    return {
+      result: undefined,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/editor/places");
+  revalidatePath("/places");
+
+  return {
+    result: undefined,
+    error: null,
+  };
+}
+
+// Advanced search with location filtering
+export async function advancedSearchPlacesAction(
+  filters: {
+    keyword?: string;
+    regionId?: string;
+    category?: PlaceCategory;
+    location?: {
+      latitude: number;
+      longitude: number;
+      radiusKm: number;
+    };
+    hasRating?: boolean;
+    minRating?: number;
+    pagination: {
+      page: number;
+      limit: number;
+    };
+  },
+  userId?: string,
+): Promise<
+  ActionState<{
+    items: PlaceWithStats[];
+    count: number;
+    totalPages: number;
+    currentPage: number;
+    searchTerm: string;
+  }>
+> {
+  const result = await advancedSearchPlaces(context, filters, userId);
+
+  if (result.isErr()) {
+    return {
+      result: {
+        items: [],
+        count: 0,
+        totalPages: 0,
+        currentPage: 1,
+        searchTerm: filters.keyword || "",
+      },
       error: result.error,
     };
   }

@@ -19,8 +19,7 @@ export function PinButton({ regionId, isAuthenticated }: PinButtonProps) {
 
   const handleClick = () => {
     if (!isAuthenticated) {
-      window.location.href =
-        "/auth/login?redirect=" + encodeURIComponent(window.location.pathname);
+      window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
 

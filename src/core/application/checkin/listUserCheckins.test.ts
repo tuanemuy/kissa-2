@@ -1,7 +1,8 @@
-import { err, ok } from "neverthrow";
+import { err, ok, type Result } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type { User } from "@/core/domain/user/types";
+import type { AnyError } from "@/lib/error";
 import type { Context } from "../context";
 import {
   getCheckinDetails,
@@ -54,9 +55,13 @@ const mockCheckin: CheckinWithDetails = {
 };
 
 const createMockContext = (
-  userResult: any = ok(mockUser as User | null),
-  checkinsResult: any = ok([mockCheckin] as CheckinWithDetails[]),
-  checkinResult: any = ok(mockCheckin as CheckinWithDetails | null),
+  userResult: Result<User | null, AnyError> = ok(mockUser as User | null),
+  checkinsResult: Result<CheckinWithDetails[], AnyError> = ok([
+    mockCheckin,
+  ] as CheckinWithDetails[]),
+  checkinResult: Result<CheckinWithDetails | null, AnyError> = ok(
+    mockCheckin as CheckinWithDetails | null,
+  ),
 ): Context =>
   ({
     userRepository: {
@@ -120,7 +125,10 @@ describe("listUserCheckins", () => {
   it("should return error when repository fails", async () => {
     const context = createMockContext(
       ok(mockUser),
-      err(new Error("Database error")),
+      err({
+        name: "RepositoryError",
+        message: "Database error",
+      }),
     );
     const input: ListUserCheckinsInput = {
       userId: "12345678-1234-1234-1234-123456789012",

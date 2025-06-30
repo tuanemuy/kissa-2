@@ -1,11 +1,13 @@
 import {
   ArrowLeft,
   CalendarDays,
+  Camera,
   MapPin,
   MessageSquare,
   Star,
 } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCheckinDetailsAction } from "@/actions/checkins";
@@ -117,6 +119,49 @@ export default async function CheckinDetailsPage({
                   <p className="text-sm leading-relaxed bg-muted/50 p-4 rounded-lg">
                     {checkin.comment}
                   </p>
+                </div>
+              </>
+            )}
+
+            {/* Photos Gallery */}
+            {checkin.photos && checkin.photos.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="font-medium mb-3 flex items-center">
+                    <Camera className="h-4 w-4 mr-2" />
+                    写真 ({checkin.photos.length}枚)
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {checkin.photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="aspect-square rounded-lg overflow-hidden bg-muted group cursor-pointer hover:shadow-md transition-shadow"
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.caption || "チェックイン写真"}
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {checkin.photos.some((photo) => photo.caption) && (
+                    <div className="mt-4 space-y-2">
+                      {checkin.photos
+                        .filter((photo) => photo.caption)
+                        .map((photo) => (
+                          <p
+                            key={photo.id}
+                            className="text-sm text-muted-foreground bg-muted/30 p-2 rounded"
+                          >
+                            {photo.caption}
+                          </p>
+                        ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}

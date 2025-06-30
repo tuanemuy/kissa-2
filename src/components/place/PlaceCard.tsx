@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import type { PlaceWithStats } from "@/core/domain/place/types";
+import { formatBusinessHours } from "@/lib/businessHoursUtils";
+import { getCategoryDisplayName } from "@/lib/categoryUtils";
 
 interface PlaceCardProps {
   place: PlaceWithStats;
@@ -77,35 +79,4 @@ export function PlaceCard({ place }: PlaceCardProps) {
       </div>
     </Link>
   );
-}
-
-function getCategoryDisplayName(category: string): string {
-  const categoryMap: Record<string, string> = {
-    restaurant: "レストラン",
-    cafe: "カフェ",
-    shop: "ショップ",
-    hotel: "ホテル",
-    attraction: "観光地",
-    park: "公園",
-    museum: "博物館",
-    temple: "寺院・神社",
-    other: "その他",
-  };
-
-  return categoryMap[category] || category;
-}
-
-function formatBusinessHours(businessHours: unknown): string {
-  // Assuming businessHours is a JSON object with day-specific hours
-  // This is a simplified implementation
-  if (typeof businessHours === "string") {
-    return businessHours;
-  }
-
-  if (typeof businessHours === "object" && businessHours !== null) {
-    // For now, just show a generic message
-    return "営業時間詳細はクリックして確認";
-  }
-
-  return "営業時間要確認";
 }

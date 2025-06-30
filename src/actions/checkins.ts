@@ -215,6 +215,22 @@ export async function createCheckinAction(
     | SessionManagementError
   >
 > {
+  // Process photos from form data
+  const photos = [];
+  let photoIndex = 0;
+  while (formData.has(`photos[${photoIndex}][url]`)) {
+    const url = formData.get(`photos[${photoIndex}][url]`) as string;
+    const caption = formData.get(`photos[${photoIndex}][caption]`) as string;
+
+    if (url) {
+      photos.push({
+        url,
+        caption: caption || undefined,
+      });
+    }
+    photoIndex++;
+  }
+
   const input = {
     placeId: formData.get("placeId") as string,
     comment: (formData.get("comment") as string) || undefined,
@@ -226,7 +242,7 @@ export async function createCheckinAction(
       longitude: Number.parseFloat(formData.get("longitude") as string),
     },
     isPrivate: formData.get("isPrivate") === "true",
-    photos: [],
+    photos,
   };
 
   const validation = validate(createCheckinInputSchema, input);

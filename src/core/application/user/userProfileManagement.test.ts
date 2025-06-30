@@ -1,6 +1,7 @@
-import { ok } from "neverthrow";
+import { ok, type Result } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import type { User } from "@/core/domain/user/types";
+import type { AnyError } from "@/lib/error";
 import type { Context } from "../context";
 import {
   type ChangePasswordInput,
@@ -27,7 +28,7 @@ const mockUser: User = {
 };
 
 const createMockContext = (
-  userResult: any = ok(mockUser as User | null),
+  userResult: Result<User | null, AnyError> = ok(mockUser as User | null),
   updateResult = ok(mockUser),
   passwordVerifyResult = ok(true),
   hashResult = ok("new-hashed-password"),

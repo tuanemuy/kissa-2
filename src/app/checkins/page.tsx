@@ -1,5 +1,12 @@
-import { CalendarDays, MapPin, MessageSquare, Star } from "lucide-react";
+import {
+  CalendarDays,
+  Camera,
+  MapPin,
+  MessageSquare,
+  Star,
+} from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { getUserCheckinsAction } from "@/actions/checkins";
 import { UserLayout } from "@/components/layout";
@@ -131,6 +138,11 @@ function CheckinCard({
     rating?: number;
     isPrivate: boolean;
     createdAt: Date;
+    photos?: Array<{
+      id: string;
+      url: string;
+      caption?: string;
+    }>;
   };
 }) {
   return (
@@ -197,6 +209,44 @@ function CheckinCard({
                 <div className="flex items-start space-x-2">
                   <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <p className="text-sm">{checkin.comment}</p>
+                </div>
+              </>
+            )}
+
+            {/* Photos */}
+            {checkin.photos && checkin.photos.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Camera className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      写真 ({checkin.photos.length}枚)
+                    </span>
+                  </div>
+                  <div className="flex space-x-2 overflow-x-auto">
+                    {checkin.photos.slice(0, 4).map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted"
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.caption || "チェックイン写真"}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                    {checkin.photos.length > 4 && (
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">
+                          +{checkin.photos.length - 4}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
             )}
