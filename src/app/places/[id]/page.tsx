@@ -10,15 +10,21 @@ import {
   Users,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPlaceByIdAction } from "@/actions/place";
+import { CheckinButton } from "@/components/place/CheckinButton";
+import { CheckinList } from "@/components/place/CheckinList";
+import { FavoriteButton } from "@/components/place/FavoriteButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { context } from "@/context";
+import { getCurrentUser } from "@/core/application/user/sessionManagement";
 
 interface PlaceDetailPageProps {
   params: Promise<{ id: string }>;
@@ -51,6 +57,16 @@ export default async function PlaceDetailPage({
 
   if (error || !place) {
     notFound();
+  }
+
+  // Check authentication
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+  let isAuthenticated = false;
+
+  if (sessionToken?.value) {
+    const userResult = await getCurrentUser(context, sessionToken.value);
+    isAuthenticated = userResult.isOk() && !!userResult.value;
   }
 
   return (
@@ -161,7 +177,7 @@ export default async function PlaceDetailPage({
           )}
 
           <Suspense fallback={<CheckinListSkeleton />}>
-            <CheckinListCard placeId={place.id} />
+            <CheckinList placeId={place.id} />
           </Suspense>
         </div>
 
@@ -276,7 +292,15 @@ export default async function PlaceDetailPage({
             <Separator />
 
             <div className="space-y-2">
-              <AuthPrompt />
+              <FavoriteButton
+                placeId={place.id}
+                isAuthenticated={isAuthenticated}
+              />
+              <CheckinButton
+                placeId={place.id}
+                placeName={place.name}
+                isAuthenticated={isAuthenticated}
+              />
             </div>
 
             {place.regionName && (
@@ -411,26 +435,6 @@ function BusinessHours({
   );
 }
 
-function CheckinListCard({ placeId: _ }: { placeId: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Users className="h-5 w-5 mr-2" />
-          最近のチェックイン
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center py-8 text-muted-foreground">
-          <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>チェックイン機能は開発中です</p>
-          <p className="text-sm mt-1">ログインして利用できるようになります</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function CheckinListSkeleton() {
   return (
     <Card>
@@ -458,27 +462,5 @@ function CheckinListSkeleton() {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function AuthPrompt() {
-  return (
-    <>
-      <Button className="w-full" size="sm" asChild>
-        <Link href="/auth/login?redirect=/dashboard">
-          <Heart className="h-4 w-4 mr-2" />
-          お気に入りに追加
-        </Link>
-      </Button>
-      <Button variant="outline" className="w-full" size="sm" asChild>
-        <Link href="/auth/login?redirect=/dashboard">
-          <Clock className="h-4 w-4 mr-2" />
-          チェックイン
-        </Link>
-      </Button>
-      <p className="text-xs text-muted-foreground text-center mt-2">
-        ログインして機能を利用できます
-      </p>
-    </>
   );
 }

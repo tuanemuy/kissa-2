@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { User } from "@/core/domain/user/types";
+import type { ValidationError } from "@/lib/validation";
 
 const profileFormSchema = z.object({
   name: z
@@ -71,15 +72,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
   // Show success/error toasts based on action state
   if (actionState.error && isPending === false) {
     if (actionState.error.name === "ValidationError") {
-      const validationError = actionState.error as any;
+      const validationError =
+        actionState.error as ValidationError<ProfileFormData>;
       // Handle validation errors from the server
-      Object.entries(validationError.error.issues || {}).forEach(
-        ([field, messages]) => {
-          form.setError(field as keyof ProfileFormData, {
-            message: Array.isArray(messages) ? messages[0] : messages,
-          });
-        },
-      );
+      if (validationError.error.issues) {
+        for (const issue of validationError.error.issues) {
+          const fieldName = issue.path[0] as keyof ProfileFormData;
+          if (fieldName && issue.message) {
+            form.setError(fieldName, {
+              message: issue.message,
+            });
+          }
+        }
+      }
     } else {
       toast.error("プロフィールの更新に失敗しました。");
     }

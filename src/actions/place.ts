@@ -8,6 +8,7 @@ import {
   getPlacesByRegion,
   listPlaces,
 } from "@/core/application/place/listPlaces";
+import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type {
   ListPlacesQuery,
   PlaceCategory,
@@ -179,4 +180,67 @@ export async function getMapLocationsAction(regionId: string): Promise<
     result: result.value,
     error: null,
   };
+}
+
+export interface PlaceCheckin extends Omit<CheckinWithDetails, "userName"> {
+  userName?: string;
+  userAvatar?: string;
+}
+
+// Get Place Checkins Action
+export async function getPlaceCheckinsAction(
+  placeId: string,
+  limit = 10,
+): Promise<ActionState<PlaceCheckin[]>> {
+  try {
+    // Get all checkins for this place from the repository
+    const checkinsResult = await context.checkinRepository.getByPlace(
+      placeId,
+      limit,
+    );
+
+    if (checkinsResult.isErr()) {
+      return {
+        result: [],
+        error: checkinsResult.error,
+      };
+    }
+
+    // Enhance checkins with user information
+    const enhancedCheckins: PlaceCheckin[] = await Promise.all(
+      checkinsResult.value.map(async (checkin: CheckinWithDetails) => {
+        try {
+          const userResult = await context.userRepository.findById(
+            checkin.userId,
+          );
+          if (userResult.isOk() && userResult.value) {
+            const user = userResult.value;
+            return {
+              ...checkin,
+              userName: user.name,
+              userAvatar: user.avatar,
+            };
+          }
+        } catch (error) {
+          console.error("Failed to enhance checkin with user info:", error);
+        }
+
+        return checkin;
+      }),
+    );
+
+    return {
+      result: enhancedCheckins,
+      error: null,
+    };
+  } catch (error) {
+    console.error("Failed to get place checkins:", error);
+    return {
+      result: [],
+      error: {
+        name: "RepositoryError",
+        message: "Failed to get place checkins",
+      },
+    };
+  }
 }

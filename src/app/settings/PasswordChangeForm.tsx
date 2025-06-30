@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import type { ValidationError } from "@/lib/validation";
 
 const passwordFormSchema = z
   .object({
@@ -62,15 +63,19 @@ export function PasswordChangeForm() {
   // Show success/error toasts based on action state
   if (actionState.error && isPending === false) {
     if (actionState.error.name === "ValidationError") {
-      const validationError = actionState.error as any;
+      const validationError =
+        actionState.error as ValidationError<PasswordFormData>;
       // Handle validation errors from the server
-      Object.entries(validationError.error.issues || {}).forEach(
-        ([field, messages]) => {
-          form.setError(field as keyof PasswordFormData, {
-            message: Array.isArray(messages) ? messages[0] : messages,
-          });
-        },
-      );
+      if (validationError.error.issues) {
+        for (const issue of validationError.error.issues) {
+          const fieldName = issue.path[0] as keyof PasswordFormData;
+          if (fieldName && issue.message) {
+            form.setError(fieldName, {
+              message: issue.message,
+            });
+          }
+        }
+      }
     } else if (actionState.error.message === "Current password is incorrect") {
       form.setError("currentPassword", {
         message: "現在のパスワードが正しくありません",

@@ -1,7 +1,14 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import type { z } from "zod/v4";
 import { context } from "@/context";
+import {
+  type CreateCheckinError,
+  createCheckin,
+  createCheckinInputSchema,
+} from "@/core/application/checkin/createCheckin";
 import {
   getCheckinDetails,
   type ListUserCheckinsError,
@@ -13,6 +20,7 @@ import {
 } from "@/core/application/user/sessionManagement";
 import type { CheckinWithDetails } from "@/core/domain/checkin/types";
 import type { ActionState } from "@/lib/actionState";
+import { type ValidationError, validate } from "@/lib/validation";
 
 export interface CheckinWithPlace
   extends Omit<CheckinWithDetails, "placeName"> {
@@ -186,6 +194,92 @@ export async function getCheckinDetailsAction(
 
   return {
     result: enhancedCheckin,
+    error: null,
+  };
+}
+
+// Create Checkin Action
+export async function createCheckinAction(
+  prevState: ActionState<
+    void,
+    | ValidationError<z.infer<typeof createCheckinInputSchema>>
+    | CreateCheckinError
+    | SessionManagementError
+  >,
+  formData: FormData,
+): Promise<
+  ActionState<
+    void,
+    | ValidationError<z.infer<typeof createCheckinInputSchema>>
+    | CreateCheckinError
+    | SessionManagementError
+  >
+> {
+  const input = {
+    placeId: formData.get("placeId") as string,
+    comment: (formData.get("comment") as string) || undefined,
+    rating: formData.get("rating")
+      ? Number.parseInt(formData.get("rating") as string, 10)
+      : undefined,
+    userLocation: {
+      latitude: Number.parseFloat(formData.get("latitude") as string),
+      longitude: Number.parseFloat(formData.get("longitude") as string),
+    },
+    isPrivate: formData.get("isPrivate") === "true",
+    photos: [],
+  };
+
+  const validation = validate(createCheckinInputSchema, input);
+  if (validation.isErr()) {
+    return {
+      result: prevState.result,
+      error: validation.error,
+    };
+  }
+
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+
+  if (!sessionToken?.value) {
+    return {
+      result: prevState.result,
+      error: null,
+    };
+  }
+
+  const userResult = await getCurrentUser(context, sessionToken.value);
+  if (userResult.isErr()) {
+    return {
+      result: prevState.result,
+      error: userResult.error,
+    };
+  }
+
+  if (!userResult.value) {
+    return {
+      result: prevState.result,
+      error: null,
+    };
+  }
+
+  const checkinResult = await createCheckin(
+    context,
+    userResult.value.id,
+    validation.value,
+  );
+
+  if (checkinResult.isErr()) {
+    return {
+      result: prevState.result,
+      error: checkinResult.error,
+    };
+  }
+
+  revalidatePath("/checkins");
+  revalidatePath(`/places/${input.placeId}`);
+
+  return {
+    result: undefined,
     error: null,
   };
 }

@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getRegionByIdAction } from "@/actions/region";
 import { PlaceList } from "@/components/place/PlaceList";
+import { FavoriteButton } from "@/components/region/FavoriteButton";
+import { PinButton } from "@/components/region/PinButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { context } from "@/context";
+import { getCurrentUser } from "@/core/application/user/sessionManagement";
 
 interface RegionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -40,6 +45,16 @@ export default async function RegionDetailPage({
 
   if (error || !region) {
     notFound();
+  }
+
+  // Check authentication
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+  let isAuthenticated = false;
+
+  if (sessionToken?.value) {
+    const userResult = await getCurrentUser(context, sessionToken.value);
+    isAuthenticated = userResult.isOk() && !!userResult.value;
   }
 
   return (
@@ -155,12 +170,14 @@ export default async function RegionDetailPage({
             </div>
 
             <div className="mt-6 space-y-2">
-              <Button className="w-full" variant="outline">
-                お気に入りに追加
-              </Button>
-              <Button className="w-full" variant="outline">
-                ピン留めする
-              </Button>
+              <FavoriteButton
+                regionId={region.id}
+                isAuthenticated={isAuthenticated}
+              />
+              <PinButton
+                regionId={region.id}
+                isAuthenticated={isAuthenticated}
+              />
             </div>
           </div>
         </div>

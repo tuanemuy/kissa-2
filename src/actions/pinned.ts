@@ -6,6 +6,7 @@ import { ZodError, z } from "zod/v4";
 import { context } from "@/context";
 import {
   getUserPinnedRegions,
+  pinRegion,
   type RegionPinApplicationError,
   reorderPinnedRegions,
   unpinRegion,
@@ -110,6 +111,58 @@ export async function unpinRegionAction(
   }
 
   revalidatePath("/pinned");
+
+  return {
+    result: undefined,
+    error: null,
+  };
+}
+
+// Pin Region Action
+export async function pinRegionAction(
+  regionId: string,
+): Promise<
+  ActionState<void, RegionPinApplicationError | SessionManagementError>
+> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+
+  if (!sessionToken?.value) {
+    return {
+      result: undefined,
+      error: null,
+    };
+  }
+
+  const userResult = await getCurrentUser(context, sessionToken.value);
+  if (userResult.isErr()) {
+    return {
+      result: undefined,
+      error: userResult.error,
+    };
+  }
+
+  if (!userResult.value) {
+    return {
+      result: undefined,
+      error: null,
+    };
+  }
+
+  const result = await pinRegion(context, {
+    userId: userResult.value.id,
+    regionId,
+  });
+
+  if (result.isErr()) {
+    return {
+      result: undefined,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/pinned");
+  revalidatePath(`/regions/${regionId}`);
 
   return {
     result: undefined,

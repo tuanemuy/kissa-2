@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { context } from "@/context";
 import {
+  addPlaceToFavorites,
   getUserFavoritePlaces,
   type PlaceFavoriteApplicationError,
   removePlaceFromFavorites,
 } from "@/core/application/place/manageFavorites";
 import {
+  addRegionToFavorites,
   getUserFavoriteRegions,
   type RegionFavoriteApplicationError,
   removeRegionFromFavorites,
@@ -212,6 +214,110 @@ export async function removePlaceFromFavoritesAction(
   }
 
   revalidatePath("/favorites");
+
+  return {
+    result: undefined,
+    error: null,
+  };
+}
+
+// Add Region to Favorites Action
+export async function addRegionToFavoritesAction(
+  regionId: string,
+): Promise<
+  ActionState<void, RegionFavoriteApplicationError | SessionManagementError>
+> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+
+  if (!sessionToken?.value) {
+    return {
+      result: undefined,
+      error: null,
+    };
+  }
+
+  const userResult = await getCurrentUser(context, sessionToken.value);
+  if (userResult.isErr()) {
+    return {
+      result: undefined,
+      error: userResult.error,
+    };
+  }
+
+  if (!userResult.value) {
+    return {
+      result: undefined,
+      error: null,
+    };
+  }
+
+  const result = await addRegionToFavorites(context, {
+    userId: userResult.value.id,
+    regionId,
+  });
+
+  if (result.isErr()) {
+    return {
+      result: undefined,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/favorites");
+  revalidatePath(`/regions/${regionId}`);
+
+  return {
+    result: undefined,
+    error: null,
+  };
+}
+
+// Add Place to Favorites Action
+export async function addPlaceToFavoritesAction(
+  placeId: string,
+): Promise<
+  ActionState<void, PlaceFavoriteApplicationError | SessionManagementError>
+> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+
+  if (!sessionToken?.value) {
+    return {
+      result: undefined,
+      error: null,
+    };
+  }
+
+  const userResult = await getCurrentUser(context, sessionToken.value);
+  if (userResult.isErr()) {
+    return {
+      result: undefined,
+      error: userResult.error,
+    };
+  }
+
+  if (!userResult.value) {
+    return {
+      result: undefined,
+      error: null,
+    };
+  }
+
+  const result = await addPlaceToFavorites(context, {
+    userId: userResult.value.id,
+    placeId,
+  });
+
+  if (result.isErr()) {
+    return {
+      result: undefined,
+      error: result.error,
+    };
+  }
+
+  revalidatePath("/favorites");
+  revalidatePath(`/places/${placeId}`);
 
   return {
     result: undefined,
