@@ -4,6 +4,7 @@ import type { Report } from "@/core/domain/report/types";
 import { AnyError } from "@/lib/error";
 import { ERROR_CODES } from "@/lib/errorCodes";
 import type { Context } from "../context";
+import { sendReportNotification } from "./sendReportNotification";
 
 export class CreateReportError extends AnyError {
   override readonly name = "CreateReportError";
@@ -164,7 +165,35 @@ export async function createReport(
       );
     }
 
-    return ok(reportResult.value);
+    const report = reportResult.value;
+
+    // Send notification emails to admins (async, don't fail if emails fail)
+    const entityName = await getEntityName(
+      context,
+      input.entityType,
+      input.entityId,
+    );
+
+    const notificationResult = await sendReportNotification(context, {
+      reportId: report.id,
+      reporterName: user.name,
+      entityType: input.entityType,
+      entityName: entityName.isOk()
+        ? entityName.value
+        : `${input.entityType} (ID: ${input.entityId})`,
+      reportType: input.type,
+      reason: input.reason,
+    });
+
+    if (notificationResult.isErr()) {
+      // Log error but don't fail report creation
+      console.error(
+        "Failed to send report notification emails:",
+        notificationResult.error,
+      );
+    }
+
+    return ok(report);
   } catch (error) {
     return err(
       new CreateReportError(
@@ -318,6 +347,90 @@ async function checkIfOwnContent(
     return err(
       new CreateReportError(
         "Unexpected error checking content ownership",
+        ERROR_CODES.INTERNAL_ERROR,
+        error,
+      ),
+    );
+  }
+}
+
+async function getEntityName(
+  context: Context,
+  entityType: string,
+  entityId: string,
+): Promise<Result<string, CreateReportError>> {
+  try {
+    switch (entityType) {
+      case "user": {
+        const result = await context.userRepository.findById(entityId);
+        if (result.isErr()) {
+          return err(
+            new CreateReportError(
+              "Failed to get entity name",
+              ERROR_CODES.INTERNAL_ERROR,
+              result.error,
+            ),
+          );
+        }
+        return ok(result.value?.name || "Unknown User");
+      }
+      case "place": {
+        const result = await context.placeRepository.findById(entityId);
+        if (result.isErr()) {
+          return err(
+            new CreateReportError(
+              "Failed to get entity name",
+              ERROR_CODES.INTERNAL_ERROR,
+              result.error,
+            ),
+          );
+        }
+        return ok(result.value?.name || "Unknown Place");
+      }
+      case "region": {
+        const result = await context.regionRepository.findById(entityId);
+        if (result.isErr()) {
+          return err(
+            new CreateReportError(
+              "Failed to get entity name",
+              ERROR_CODES.INTERNAL_ERROR,
+              result.error,
+            ),
+          );
+        }
+        return ok(result.value?.name || "Unknown Region");
+      }
+      case "checkin": {
+        const result = await context.checkinRepository.findById(entityId);
+        if (result.isErr()) {
+          return err(
+            new CreateReportError(
+              "Failed to get entity name",
+              ERROR_CODES.INTERNAL_ERROR,
+              result.error,
+            ),
+          );
+        }
+        const checkin = result.value;
+        if (checkin) {
+          // Try to get the place name for better context
+          const placeResult = await context.placeRepository.findById(
+            checkin.placeId,
+          );
+          if (placeResult.isOk() && placeResult.value) {
+            return ok(`Check-in at ${placeResult.value.name}`);
+          }
+          return ok(`Check-in (ID: ${entityId})`);
+        }
+        return ok("Unknown Check-in");
+      }
+      default:
+        return ok(`${entityType} (ID: ${entityId})`);
+    }
+  } catch (error) {
+    return err(
+      new CreateReportError(
+        "Unexpected error getting entity name",
         ERROR_CODES.INTERNAL_ERROR,
         error,
       ),

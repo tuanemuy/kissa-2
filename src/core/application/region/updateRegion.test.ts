@@ -435,6 +435,8 @@ describe("updateRegion", () => {
             latitude: -90, // Minimum latitude
             longitude: -180, // Minimum longitude
           },
+          images: [],
+          tags: [],
         },
       };
 
@@ -458,6 +460,8 @@ describe("updateRegion", () => {
             latitude: 90, // Maximum latitude
             longitude: 180, // Maximum longitude
           },
+          images: [],
+          tags: [],
         },
       };
 
@@ -563,6 +567,8 @@ describe("updateRegion", () => {
             latitude: 0,
             longitude: 0,
           },
+          images: [],
+          tags: [],
         },
       };
 

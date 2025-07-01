@@ -14,6 +14,14 @@ export function isError(error: unknown): error is AnyError | Error {
   return error instanceof Error || error instanceof AnyError;
 }
 
+export class RepositoryError extends AnyError {
+  override readonly name: string = "RepositoryError";
+
+  constructor(message: string, cause?: unknown) {
+    super(message, "REPOSITORY_ERROR", cause);
+  }
+}
+
 export function fromUnknown(error: unknown): AnyError {
   if (error instanceof Error) {
     if (error instanceof AnyError) {

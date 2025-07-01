@@ -107,9 +107,11 @@ export async function getSubscriptionAnalytics(
       : 0;
 
     // Calculate metrics
+    // For churn rate, exclude 'none' status users (users who never had a subscription)
+    const actualSubscribers = totalSubscribers - statusCounts.none;
     const churnRate =
-      totalSubscribers > 0
-        ? Math.min((cancelledSubscribers / totalSubscribers) * 100, 100)
+      actualSubscribers > 0
+        ? Math.min((cancelledSubscribers / actualSubscribers) * 100, 100)
         : 0;
     const conversionRate =
       trialSubscribers > 0

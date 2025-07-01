@@ -246,3 +246,116 @@ export const updateUserSubscriptionParamsSchema = z.object({
 export type UpdateUserSubscriptionParams = z.infer<
   typeof updateUserSubscriptionParamsSchema
 >;
+
+// Payment method types
+export const paymentMethodTypeSchema = z.enum([
+  "credit_card",
+  "bank_transfer",
+  "paypal",
+]);
+export type PaymentMethodType = z.infer<typeof paymentMethodTypeSchema>;
+
+export const paymentMethodSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  type: paymentMethodTypeSchema,
+  isDefault: z.boolean(),
+  cardLast4: z.string().length(4).optional(),
+  cardBrand: z.string().optional(),
+  expiryMonth: z.number().int().min(1).max(12).optional(),
+  expiryYear: z.number().int().min(2024).max(2050).optional(),
+  paypalEmail: z.string().email().optional(),
+  bankAccountLast4: z.string().length(4).optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
+
+export const createPaymentMethodSchema = z.object({
+  userId: z.string().uuid(),
+  type: paymentMethodTypeSchema,
+  isDefault: z.boolean().default(false),
+  cardLast4: z.string().length(4).optional(),
+  cardBrand: z.string().optional(),
+  expiryMonth: z.number().int().min(1).max(12).optional(),
+  expiryYear: z.number().int().min(2024).max(2050).optional(),
+  paypalEmail: z.string().email().optional(),
+  bankAccountLast4: z.string().length(4).optional(),
+});
+export type CreatePaymentMethodParams = z.infer<
+  typeof createPaymentMethodSchema
+>;
+
+// Billing history types
+export const billingStatusSchema = z.enum([
+  "pending",
+  "paid",
+  "failed",
+  "refunded",
+  "cancelled",
+]);
+export type BillingStatus = z.infer<typeof billingStatusSchema>;
+
+export const billingHistorySchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  subscriptionId: z.string().uuid(),
+  paymentMethodId: z.string().uuid().optional(),
+  amount: z.number().positive(),
+  currency: z.string().length(3).default("USD"),
+  status: billingStatusSchema,
+  billingPeriodStart: z.date(),
+  billingPeriodEnd: z.date(),
+  paymentAttemptedAt: z.date().optional(),
+  paidAt: z.date().optional(),
+  failedAt: z.date().optional(),
+  refundedAt: z.date().optional(),
+  failureReason: z.string().optional(),
+  invoiceUrl: z.string().url().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type BillingHistory = z.infer<typeof billingHistorySchema>;
+
+export const createBillingHistorySchema = z.object({
+  userId: z.string().uuid(),
+  subscriptionId: z.string().uuid(),
+  paymentMethodId: z.string().uuid().optional(),
+  amount: z.number().positive(),
+  currency: z.string().length(3).default("USD"),
+  status: billingStatusSchema.default("pending"),
+  billingPeriodStart: z.date(),
+  billingPeriodEnd: z.date(),
+});
+export type CreateBillingHistoryParams = z.infer<
+  typeof createBillingHistorySchema
+>;
+
+// Usage metrics types
+export const usageMetricsSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2024),
+  regionsCreated: z.number().int().min(0).default(0),
+  placesCreated: z.number().int().min(0).default(0),
+  checkinsCount: z.number().int().min(0).default(0),
+  imagesUploaded: z.number().int().min(0).default(0),
+  storageUsedMB: z.number().min(0).default(0),
+  apiCallsCount: z.number().int().min(0).default(0),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type UsageMetrics = z.infer<typeof usageMetricsSchema>;
+
+export const usageMetricsSummarySchema = z.object({
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2024),
+  regionsCreated: z.number().int().min(0),
+  placesCreated: z.number().int().min(0),
+  checkinsCount: z.number().int().min(0),
+  imagesUploaded: z.number().int().min(0),
+  storageUsedMB: z.number().min(0),
+  apiCallsCount: z.number().int().min(0),
+});
+export type UsageMetricsSummary = z.infer<typeof usageMetricsSummarySchema>;

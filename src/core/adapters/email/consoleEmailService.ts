@@ -165,4 +165,53 @@ export class ConsoleEmailService implements EmailService {
 
     return ok(undefined);
   }
+
+  async sendReportNotification(
+    adminEmail: string,
+    adminName: string,
+    reporterName: string,
+    entityType: string,
+    entityName: string,
+    reportType: string,
+    reason: string,
+    reportId: string,
+  ): Promise<Result<void, EmailServiceError>> {
+    const reviewUrl = `${this.config.baseUrl}/admin/reports/${reportId}`;
+
+    console.log("📧 EMAIL: Report Notification");
+    console.log("─".repeat(50));
+    console.log(`To: ${adminEmail} (${adminName})`);
+    console.log(`From: ${this.config.fromName} <${this.config.fromEmail}>`);
+    console.log("Subject: New Content Report Received");
+    console.log("");
+    console.log("Body:");
+    console.log(`Hi ${adminName},`);
+    console.log("");
+    console.log(
+      "A new content report has been submitted and requires your review.",
+    );
+    console.log("");
+    console.log("Report Details:");
+    console.log(`📋 Report ID: ${reportId}`);
+    console.log(`👤 Reporter: ${reporterName}`);
+    console.log(`📍 Content Type: ${entityType}`);
+    console.log(`📄 Content: ${entityName}`);
+    console.log(`🏷️  Report Type: ${reportType}`);
+    console.log("");
+    console.log("Reason:");
+    console.log(`"${reason}"`);
+    console.log("");
+    console.log("To review this report, click the link below:");
+    console.log("");
+    console.log(`🔗 ${reviewUrl}`);
+    console.log("");
+    console.log("Please review this report as soon as possible.");
+    console.log("");
+    console.log("Best regards,");
+    console.log("The Kissa System");
+    console.log("─".repeat(50));
+    console.log("");
+
+    return ok(undefined);
+  }
 }

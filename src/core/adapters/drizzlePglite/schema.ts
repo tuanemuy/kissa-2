@@ -627,6 +627,29 @@ export const checkinRelations = relations(checkins, ({ one, many }) => ({
   photos: many(checkinPhotos),
 }));
 
+// System Settings Table
+export const systemSettings = pgTable(
+  "system_settings",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .$defaultFn(() => uuidv7()),
+    key: text("key").notNull().unique(),
+    value: text("value").notNull(),
+    description: text("description"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    keyIdx: index("system_settings_key_idx").on(table.key),
+    isActiveIdx: index("system_settings_is_active_idx").on(table.isActive),
+  }),
+);
+
 export const reportRelations = relations(reports, ({ one }) => ({
   reporter: one(users, {
     fields: [reports.reporterUserId],

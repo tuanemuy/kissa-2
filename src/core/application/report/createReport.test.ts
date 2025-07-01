@@ -886,7 +886,6 @@ describe("createReport", () => {
                 name: "Test Region",
                 description: "A test region",
                 coordinates: { latitude: 35.6762, longitude: 139.6503 },
-                address: "Test Address",
                 images: [],
                 tags: ["test"],
               },

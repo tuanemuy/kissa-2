@@ -472,6 +472,10 @@ export class MockUserSubscriptionRepository
   async countByStatus(): Promise<
     Result<Record<SubscriptionStatus, number>, UserRepositoryError>
   > {
+    if (this.shouldFailCountByStatus) {
+      return err(new UserRepositoryError("Mock failure for countByStatus"));
+    }
+
     const subscriptions = Array.from(this.subscriptions.values());
     const counts: Record<SubscriptionStatus, number> = {
       none: 0,
@@ -503,6 +507,68 @@ export class MockUserSubscriptionRepository
     }
 
     return ok(counts);
+  }
+
+  // Test helper methods
+  addSubscription(subscription: UserSubscription): void {
+    this.subscriptions.set(subscription.id, subscription);
+  }
+
+  setMockStatusCounts(counts: Record<SubscriptionStatus, number>): void {
+    this.subscriptions.clear();
+
+    Object.entries(counts).forEach(([status, count]) => {
+      for (let i = 0; i < count; i++) {
+        const subscription: UserSubscription = {
+          id: `${status}-sub-${i}`,
+          userId: `user-${status}-${i}`,
+          plan: "standard",
+          status: status as SubscriptionStatus,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          cancelAtPeriodEnd: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.subscriptions.set(subscription.id, subscription);
+      }
+    });
+  }
+
+  setMockPlanCounts(counts: Record<SubscriptionPlan, number>): void {
+    this.subscriptions.clear();
+
+    Object.entries(counts).forEach(([plan, count]) => {
+      for (let i = 0; i < count; i++) {
+        const subscription: UserSubscription = {
+          id: `${plan}-sub-${i}`,
+          userId: `user-${plan}-${i}`,
+          plan: plan as SubscriptionPlan,
+          status: "active",
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          cancelAtPeriodEnd: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.subscriptions.set(subscription.id, subscription);
+      }
+    });
+  }
+
+  setShouldFailCountByStatus(shouldFail: boolean): void {
+    this.shouldFailCountByStatus = shouldFail;
+  }
+
+  private shouldFailCountByStatus = false;
+
+  async countByStatusWithMock(): Promise<
+    Result<Record<SubscriptionStatus, number>, UserRepositoryError>
+  > {
+    if (this.shouldFailCountByStatus) {
+      return err(new UserRepositoryError("Mock failure"));
+    }
+    return this.countByStatus();
   }
 }
 
@@ -569,6 +635,11 @@ export class MockNotificationSettingsRepository
 
     this.settings.set(id, updatedSettings);
     return ok(updatedSettings);
+  }
+
+  // Test helper methods
+  addNotificationSettings(settings: NotificationSettings): void {
+    this.settings.set(settings.id, settings);
   }
 }
 
