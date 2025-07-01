@@ -459,7 +459,6 @@ describe("listRegions", () => {
               orderBy: "createdAt",
             },
             filter: {
-              status: "published",
               tags: ["test"],
               keyword: "Published",
             },

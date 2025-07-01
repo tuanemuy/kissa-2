@@ -33,4 +33,15 @@ export interface EmailService {
     email: string,
     name: string,
   ): Promise<Result<void, EmailServiceError>>;
+
+  sendReportNotification(
+    adminEmail: string,
+    adminName: string,
+    reporterName: string,
+    entityType: string,
+    entityName: string,
+    reportType: string,
+    reason: string,
+    reportId: string,
+  ): Promise<Result<void, EmailServiceError>>;
 }

@@ -126,6 +126,43 @@ export class SMTPEmailService implements EmailService {
     }
   }
 
+  async sendReportNotification(
+    adminEmail: string,
+    adminName: string,
+    reporterName: string,
+    entityType: string,
+    entityName: string,
+    reportType: string,
+    reason: string,
+    reportId: string,
+  ): Promise<Result<void, EmailServiceError>> {
+    try {
+      const template = this.createReportNotificationEmailTemplate(
+        adminName,
+        reporterName,
+        entityType,
+        entityName,
+        reportType,
+        reason,
+        reportId,
+      );
+
+      return await this.sendEmail(
+        adminEmail,
+        template.subject,
+        template.html,
+        template.text,
+      );
+    } catch (error) {
+      return err(
+        new EmailServiceError(
+          "Failed to send report notification email",
+          error,
+        ),
+      );
+    }
+  }
+
   private async sendEmail(
     to: string,
     subject: string,
@@ -385,6 +422,91 @@ Ready to explore? Visit: ${this.config.baseUrl}
 
 Happy travels!
 The Kissa Team
+    `;
+
+    return { subject, html, text };
+  }
+
+  private createReportNotificationEmailTemplate(
+    adminName: string,
+    reporterName: string,
+    entityType: string,
+    entityName: string,
+    reportType: string,
+    reason: string,
+    reportId: string,
+  ): EmailTemplate {
+    const subject = "New Content Report Received";
+    const reviewUrl = `${this.config.baseUrl}/admin/reports/${reportId}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${subject}</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #dc2626;">⚠️ Content Report Alert</h1>
+            <p>Hi ${adminName},</p>
+            <p>A new content report has been submitted and requires your immediate review.</p>
+            
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #374151;">Report Details</h3>
+              <p><strong>Report ID:</strong> ${reportId}</p>
+              <p><strong>Reporter:</strong> ${reporterName}</p>
+              <p><strong>Content Type:</strong> ${entityType}</p>
+              <p><strong>Content:</strong> ${entityName}</p>
+              <p><strong>Report Type:</strong> ${reportType}</p>
+              
+              <h4 style="color: #374151;">Reported Reason:</h4>
+              <div style="background-color: #fff; padding: 15px; border-left: 4px solid #dc2626; border-radius: 4px;">
+                <p style="margin: 0; font-style: italic;">"${reason}"</p>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${reviewUrl}" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Review Report
+              </a>
+            </div>
+            
+            <p><strong>Action Required:</strong> Please review this report as soon as possible to maintain community standards.</p>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 14px;">
+              Best regards,<br>
+              The Kissa System
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const text = `
+Content Report Alert
+
+Hi ${adminName},
+
+A new content report has been submitted and requires your immediate review.
+
+Report Details:
+- Report ID: ${reportId}
+- Reporter: ${reporterName}
+- Content Type: ${entityType}
+- Content: ${entityName}
+- Report Type: ${reportType}
+
+Reported Reason:
+"${reason}"
+
+To review this report, visit: ${reviewUrl}
+
+Action Required: Please review this report as soon as possible to maintain community standards.
+
+Best regards,
+The Kissa System
     `;
 
     return { subject, html, text };

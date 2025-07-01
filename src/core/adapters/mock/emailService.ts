@@ -5,12 +5,23 @@ import {
 } from "@/core/domain/user/ports/emailService";
 
 interface SentEmail {
-  type: "verification" | "passwordReset" | "editorInvitation" | "welcome";
+  type:
+    | "verification"
+    | "passwordReset"
+    | "editorInvitation"
+    | "welcome"
+    | "reportNotification";
   to: string;
   name: string;
   token?: string;
   inviterName?: string;
   placeName?: string;
+  reporterName?: string;
+  entityType?: string;
+  entityName?: string;
+  reportType?: string;
+  reason?: string;
+  reportId?: string;
   sentAt: Date;
 }
 
@@ -118,6 +129,38 @@ export class MockEmailService implements EmailService {
       type: "welcome",
       to: email,
       name,
+      sentAt: new Date(),
+    });
+
+    return ok(undefined);
+  }
+
+  async sendReportNotification(
+    adminEmail: string,
+    adminName: string,
+    reporterName: string,
+    entityType: string,
+    entityName: string,
+    reportType: string,
+    reason: string,
+    reportId: string,
+  ): Promise<Result<void, EmailServiceError>> {
+    if (this.shouldFail) {
+      return Promise.resolve(
+        err(new EmailServiceError("Failed to send report notification email")),
+      );
+    }
+
+    this.sentEmails.push({
+      type: "reportNotification",
+      to: adminEmail,
+      name: adminName,
+      reporterName,
+      entityType,
+      entityName,
+      reportType,
+      reason,
+      reportId,
       sentAt: new Date(),
     });
 

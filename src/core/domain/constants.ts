@@ -69,6 +69,8 @@ export const CHECKIN = {
   MAX_COMMENT_LENGTH: 1000,
   /** Maximum photo caption length */
   MAX_CAPTION_LENGTH: 200,
+  /** Maximum photos per checkin */
+  MAX_PHOTOS_PER_CHECKIN: 10,
   /** Minimum rating value */
   MIN_RATING: 1,
   /** Maximum rating value */

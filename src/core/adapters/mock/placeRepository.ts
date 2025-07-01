@@ -1258,6 +1258,20 @@ export class MockCheckinRepository implements CheckinRepository {
         );
       }
 
+      if (query.filter?.hasPhotos !== undefined) {
+        filteredCheckins = filteredCheckins.filter((c) => {
+          const hasPhotos = c.photos && c.photos.length > 0;
+          return query.filter?.hasPhotos ? hasPhotos : !hasPhotos;
+        });
+      }
+
+      if (query.filter?.hasRating !== undefined) {
+        filteredCheckins = filteredCheckins.filter((c) => {
+          const hasRating = c.rating !== undefined && c.rating !== null;
+          return query.filter?.hasRating ? hasRating : !hasRating;
+        });
+      }
+
       return ok({ items: filteredCheckins, count: filteredCheckins.length });
     } catch (error) {
       return err(new CheckinRepositoryError("Failed to list checkins", error));

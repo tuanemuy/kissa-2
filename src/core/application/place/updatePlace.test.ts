@@ -173,6 +173,8 @@ describe("updatePlace", () => {
             latitude: 35.6895,
             longitude: 139.6917,
           },
+          images: [],
+          tags: [],
         },
       };
 
@@ -477,6 +479,8 @@ describe("updatePlace", () => {
             latitude: -90, // Minimum latitude
             longitude: -180, // Minimum longitude
           },
+          images: [],
+          tags: [],
         },
       };
 
@@ -500,6 +504,8 @@ describe("updatePlace", () => {
             latitude: 90, // Maximum latitude
             longitude: 180, // Maximum longitude
           },
+          images: [],
+          tags: [],
         },
       };
 

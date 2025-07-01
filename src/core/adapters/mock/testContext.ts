@@ -5,6 +5,11 @@ import { MockPasswordHasher, MockTokenGenerator } from "./authService";
 import { MockEmailService } from "./emailService";
 import { MockLocationService } from "./locationService";
 import {
+  MockBillingHistoryRepository,
+  MockPaymentMethodRepository,
+  MockUsageMetricsRepository,
+} from "./paymentRepository";
+import {
   MockCheckinPhotoRepository,
   MockCheckinRepository,
   MockPlaceFavoriteRepository,
@@ -18,6 +23,8 @@ import {
 } from "./regionRepository";
 import { MockReportRepository } from "./reportRepository";
 import { MockSessionService } from "./sessionService";
+import { MockStorageService } from "./storageService";
+import { MockSystemSettingsRepository } from "./systemSettingsRepository";
 import {
   MockEmailVerificationTokenRepository,
   MockNotificationSettingsRepository,
@@ -60,11 +67,15 @@ export function createMockContext(options: MockContextOptions = {}): Context {
     new MockPasswordResetTokenRepository();
   const mockEmailVerificationTokenRepository =
     new MockEmailVerificationTokenRepository();
+  const mockPaymentMethodRepository = new MockPaymentMethodRepository();
+  const mockBillingHistoryRepository = new MockBillingHistoryRepository();
+  const mockUsageMetricsRepository = new MockUsageMetricsRepository();
   const mockPasswordHasher = new MockPasswordHasher();
   const mockTokenGenerator = new MockTokenGenerator();
   const mockEmailService = new MockEmailService();
   const mockSessionService = new MockSessionService();
   const mockLocationService = new MockLocationService();
+  const mockStorageService = new MockStorageService();
   const mockRegionRepository = new MockRegionRepository();
   const mockRegionFavoriteRepository = new MockRegionFavoriteRepository();
   const mockRegionPinRepository = new MockRegionPinRepository();
@@ -81,6 +92,7 @@ export function createMockContext(options: MockContextOptions = {}): Context {
   const mockCheckinRepository = new MockCheckinRepository();
   const mockCheckinPhotoRepository = new MockCheckinPhotoRepository();
   const mockReportRepository = new MockReportRepository();
+  const mockSystemSettingsRepository = new MockSystemSettingsRepository();
 
   if (options.shouldFailEmail) {
     mockEmailService.setShouldFail(true);
@@ -179,6 +191,9 @@ export function createMockContext(options: MockContextOptions = {}): Context {
     notificationSettingsRepository: mockNotificationSettingsRepository,
     emailVerificationTokenRepository: mockEmailVerificationTokenRepository,
     passwordResetTokenRepository: mockPasswordResetTokenRepository,
+    paymentMethodRepository: mockPaymentMethodRepository,
+    billingHistoryRepository: mockBillingHistoryRepository,
+    usageMetricsRepository: mockUsageMetricsRepository,
     passwordHasher: mockPasswordHasher,
     tokenGenerator: mockTokenGenerator,
     emailService: mockEmailService,
@@ -188,6 +203,8 @@ export function createMockContext(options: MockContextOptions = {}): Context {
     regionFavoriteRepository: mockRegionFavoriteRepository,
     regionPinRepository: mockRegionPinRepository,
 
+    storageService: mockStorageService,
+
     placeRepository: mockPlaceRepository,
     placeFavoriteRepository: mockPlaceFavoriteRepository,
     placePermissionRepository: mockPlacePermissionRepository,
@@ -195,6 +212,7 @@ export function createMockContext(options: MockContextOptions = {}): Context {
     checkinPhotoRepository: mockCheckinPhotoRepository,
     locationService: mockLocationService,
     reportRepository: mockReportRepository,
+    systemSettingsRepository: mockSystemSettingsRepository,
 
     database: {} as Omit<Database, "$client">,
     withTransaction: async <T>(
@@ -227,6 +245,7 @@ export function resetMockContext(context: Context): void {
   (context.emailService as MockEmailService).reset();
   (context.sessionService as MockSessionService).clearSessions();
   (context.locationService as MockLocationService).reset();
+  (context.storageService as MockStorageService).reset();
   (context.regionRepository as MockRegionRepository).reset();
   (context.regionFavoriteRepository as MockRegionFavoriteRepository).reset();
   (context.regionPinRepository as MockRegionPinRepository).reset();
@@ -236,4 +255,5 @@ export function resetMockContext(context: Context): void {
   (context.checkinRepository as MockCheckinRepository).reset();
   (context.checkinPhotoRepository as MockCheckinPhotoRepository).reset();
   (context.reportRepository as MockReportRepository).reset();
+  (context.systemSettingsRepository as MockSystemSettingsRepository).reset();
 }

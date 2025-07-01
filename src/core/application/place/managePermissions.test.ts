@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { MockEmailService } from "@/core/adapters/mock/emailService";
 import {
   createMockContext,
   resetMockContext,
@@ -140,6 +141,21 @@ describe("managePermissions", () => {
         expect(permission.invitedBy).toBe(placeOwner.id);
         expect(permission.acceptedAt).toBeUndefined();
       }
+
+      // Verify invitation email was sent
+      const mockEmailService = context.emailService as MockEmailService;
+      const sentEmails = mockEmailService.getSentEmails();
+      const invitationEmail = sentEmails.find(
+        (email) => email.type === "editorInvitation",
+      );
+
+      expect(invitationEmail).toBeDefined();
+      if (invitationEmail) {
+        expect(invitationEmail.to).toBe(inviteeUser.email);
+        expect(invitationEmail.inviterName).toBe(placeOwner.name);
+        expect(invitationEmail.placeName).toBe(testPlace.name);
+        expect(invitationEmail.token).toBeDefined();
+      }
     });
 
     it("should successfully invite an editor with delete permissions", async () => {
@@ -158,6 +174,32 @@ describe("managePermissions", () => {
         expect(permission.canEdit).toBe(true);
         expect(permission.canDelete).toBe(true);
       }
+    });
+
+    it("should still create invitation even if email sending fails", async () => {
+      // Set email service to fail
+      const mockEmailService = context.emailService as MockEmailService;
+      mockEmailService.setShouldFail(true);
+
+      const input: InviteEditorInput = {
+        placeId: testPlace.id,
+        email: inviteeUser.email,
+        canEdit: true,
+        canDelete: false,
+      };
+
+      const result = await inviteEditorToPlace(context, placeOwner.id, input);
+
+      // Invitation should still be created even if email fails
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        const permission = result.value;
+        expect(permission.placeId).toBe(testPlace.id);
+        expect(permission.userId).toBe(inviteeUser.id);
+      }
+
+      // Reset email service
+      mockEmailService.setShouldFail(false);
     });
 
     it("should fail when inviter does not exist", async () => {

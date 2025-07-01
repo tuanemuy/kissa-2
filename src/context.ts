@@ -22,6 +22,7 @@ import {
   DrizzlePgliteRegionRepository,
 } from "@/core/adapters/drizzlePglite/regionRepository";
 import { DrizzlePgliteReportRepository } from "@/core/adapters/drizzlePglite/reportRepository";
+import { DrizzlePgliteSystemSettingsRepository } from "@/core/adapters/drizzlePglite/systemSettingsRepository";
 import {
   DrizzlePgliteEmailVerificationTokenRepository,
   DrizzlePgliteNotificationSettingsRepository,
@@ -33,6 +34,12 @@ import {
 import { ConsoleEmailService } from "@/core/adapters/email/consoleEmailService";
 import { SMTPEmailService } from "@/core/adapters/email/smtpEmailService";
 import { HaversineLocationService } from "@/core/adapters/location/haversineLocationService";
+import {
+  MockBillingHistoryRepository,
+  MockPaymentMethodRepository,
+  MockUsageMetricsRepository,
+} from "@/core/adapters/mock/paymentRepository";
+import { LocalStorageService } from "@/core/adapters/storage/localStorageService";
 import type { Context } from "@/core/application/context";
 
 export const envSchema = z.object({
@@ -72,6 +79,10 @@ const emailVerificationTokenRepository =
   new DrizzlePgliteEmailVerificationTokenRepository(db);
 const passwordResetTokenRepository =
   new DrizzlePglitePasswordResetTokenRepository(db);
+// TODO: Replace with proper Drizzle implementations
+const paymentMethodRepository = new MockPaymentMethodRepository();
+const billingHistoryRepository = new MockBillingHistoryRepository();
+const usageMetricsRepository = new MockUsageMetricsRepository();
 const regionRepository = new DrizzlePgliteRegionRepository(db);
 const regionFavoriteRepository = new DrizzlePgliteRegionFavoriteRepository(db);
 const regionPinRepository = new DrizzlePgliteRegionPinRepository(db);
@@ -83,6 +94,7 @@ const placePermissionRepository = new DrizzlePglitePlacePermissionRepository(
 const checkinRepository = new DrizzlePgliteCheckinRepository(db);
 const checkinPhotoRepository = new DrizzlePgliteCheckinPhotoRepository(db);
 const reportRepository = new DrizzlePgliteReportRepository(db);
+const systemSettingsRepository = new DrizzlePgliteSystemSettingsRepository(db);
 
 // Create services
 const emailService = (() => {
@@ -124,6 +136,18 @@ const sessionService = new DrizzleSessionService(
   tokenGenerator,
 );
 const locationService = new HaversineLocationService();
+const storageService = new LocalStorageService({
+  uploadDir: "uploads",
+  baseUrl: env.data.NEXT_PUBLIC_URL,
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  allowedMimeTypes: [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ],
+});
 
 export const context: Context = {
   // Environment configuration
@@ -136,6 +160,9 @@ export const context: Context = {
   notificationSettingsRepository,
   emailVerificationTokenRepository,
   passwordResetTokenRepository,
+  paymentMethodRepository,
+  billingHistoryRepository,
+  usageMetricsRepository,
   passwordHasher,
   tokenGenerator,
   emailService,
@@ -145,6 +172,9 @@ export const context: Context = {
   regionRepository,
   regionFavoriteRepository,
   regionPinRepository,
+
+  // Storage service
+  storageService,
 
   // Place repositories
   placeRepository,
@@ -158,6 +188,9 @@ export const context: Context = {
 
   // Report repository
   reportRepository,
+
+  // System settings repository
+  systemSettingsRepository,
 
   // Database transaction support
   database: db,

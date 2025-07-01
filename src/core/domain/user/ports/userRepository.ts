@@ -1,14 +1,20 @@
 import type { Result } from "neverthrow";
 import { AnyError } from "@/lib/error";
 import type {
+  BillingHistory,
+  CreateBillingHistoryParams,
+  CreatePaymentMethodParams,
   CreateUserParams,
   EmailVerificationToken,
   ListUsersQuery,
   NotificationSettings,
   PasswordResetToken,
+  PaymentMethod,
   SubscriptionPlan,
   SubscriptionStatus,
   UpdateUserProfileParams,
+  UsageMetrics,
+  UsageMetricsSummary,
   User,
   UserRole,
   UserSession,
@@ -184,4 +190,157 @@ export interface EmailVerificationTokenRepository {
   ): Promise<Result<EmailVerificationToken, UserRepositoryError>>;
 
   deleteExpired(): Promise<Result<number, UserRepositoryError>>;
+}
+
+export interface PaymentMethodRepository {
+  create(
+    params: CreatePaymentMethodParams,
+  ): Promise<Result<PaymentMethod, UserRepositoryError>>;
+
+  findByUserId(
+    userId: string,
+  ): Promise<Result<PaymentMethod[], UserRepositoryError>>;
+
+  findById(
+    id: string,
+  ): Promise<Result<PaymentMethod | null, UserRepositoryError>>;
+
+  update(
+    id: string,
+    params: Partial<
+      Pick<
+        PaymentMethod,
+        | "isDefault"
+        | "cardLast4"
+        | "cardBrand"
+        | "expiryMonth"
+        | "expiryYear"
+        | "paypalEmail"
+        | "bankAccountLast4"
+      >
+    >,
+  ): Promise<Result<PaymentMethod, UserRepositoryError>>;
+
+  setAsDefault(
+    id: string,
+    userId: string,
+  ): Promise<Result<PaymentMethod, UserRepositoryError>>;
+
+  delete(id: string): Promise<Result<void, UserRepositoryError>>;
+
+  findDefaultByUserId(
+    userId: string,
+  ): Promise<Result<PaymentMethod | null, UserRepositoryError>>;
+}
+
+export interface BillingHistoryRepository {
+  create(
+    params: CreateBillingHistoryParams,
+  ): Promise<Result<BillingHistory, UserRepositoryError>>;
+
+  findByUserId(
+    userId: string,
+    pagination: {
+      page: number;
+      limit: number;
+      order: "asc" | "desc";
+      orderBy: "createdAt" | "paidAt";
+    },
+  ): Promise<
+    Result<{ items: BillingHistory[]; count: number }, UserRepositoryError>
+  >;
+
+  findById(
+    id: string,
+  ): Promise<Result<BillingHistory | null, UserRepositoryError>>;
+
+  updateStatus(
+    id: string,
+    status: BillingHistory["status"],
+    metadata?: {
+      paidAt?: Date;
+      failedAt?: Date;
+      refundedAt?: Date;
+      failureReason?: string;
+      invoiceUrl?: string;
+    },
+  ): Promise<Result<BillingHistory, UserRepositoryError>>;
+
+  findBySubscriptionId(
+    subscriptionId: string,
+  ): Promise<Result<BillingHistory[], UserRepositoryError>>;
+
+  getTotalRevenue(): Promise<Result<number, UserRepositoryError>>;
+
+  getRevenueByPeriod(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Result<number, UserRepositoryError>>;
+}
+
+export interface UsageMetricsRepository {
+  create(
+    metrics: Omit<UsageMetrics, "id" | "createdAt" | "updatedAt">,
+  ): Promise<Result<UsageMetrics, UserRepositoryError>>;
+
+  findByUserAndMonth(
+    userId: string,
+    month: number,
+    year: number,
+  ): Promise<Result<UsageMetrics | null, UserRepositoryError>>;
+
+  findByUserId(
+    userId: string,
+    limit?: number,
+  ): Promise<Result<UsageMetrics[], UserRepositoryError>>;
+
+  update(
+    id: string,
+    params: Partial<
+      Pick<
+        UsageMetrics,
+        | "regionsCreated"
+        | "placesCreated"
+        | "checkinsCount"
+        | "imagesUploaded"
+        | "storageUsedMB"
+        | "apiCallsCount"
+      >
+    >,
+  ): Promise<Result<UsageMetrics, UserRepositoryError>>;
+
+  incrementUsage(
+    userId: string,
+    month: number,
+    year: number,
+    usage: {
+      regionsCreated?: number;
+      placesCreated?: number;
+      checkinsCount?: number;
+      imagesUploaded?: number;
+      storageUsedMB?: number;
+      apiCallsCount?: number;
+    },
+  ): Promise<Result<UsageMetrics, UserRepositoryError>>;
+
+  getMonthlyUsage(
+    userId: string,
+    month: number,
+    year: number,
+  ): Promise<Result<UsageMetricsSummary, UserRepositoryError>>;
+
+  getYearlyUsage(
+    userId: string,
+    year: number,
+  ): Promise<Result<UsageMetricsSummary[], UserRepositoryError>>;
+
+  getCurrentMonthUsage(
+    userId: string,
+  ): Promise<Result<UsageMetricsSummary, UserRepositoryError>>;
+
+  getAggregatedUsageByPlan(
+    plan: SubscriptionPlan,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Result<UsageMetricsSummary, UserRepositoryError>>;
 }

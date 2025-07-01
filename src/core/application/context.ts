@@ -15,7 +15,9 @@ import type {
   RegionPinRepository,
   RegionRepository,
 } from "@/core/domain/region/ports/regionRepository";
+import type { StorageService } from "@/core/domain/region/ports/storageService";
 import type { ReportRepository } from "@/core/domain/report/ports/reportRepository";
+import type { SystemSettingsRepository } from "@/core/domain/systemSettings/ports/systemSettingsRepository";
 import type {
   PasswordHasher,
   TokenGenerator,
@@ -23,9 +25,12 @@ import type {
 import type { EmailService } from "@/core/domain/user/ports/emailService";
 import type { SessionService } from "@/core/domain/user/ports/sessionService";
 import type {
+  BillingHistoryRepository,
   EmailVerificationTokenRepository,
   NotificationSettingsRepository,
   PasswordResetTokenRepository,
+  PaymentMethodRepository,
+  UsageMetricsRepository,
   UserRepository,
   UserSessionRepository,
   UserSubscriptionRepository,
@@ -42,6 +47,9 @@ export interface Context {
   notificationSettingsRepository: NotificationSettingsRepository;
   emailVerificationTokenRepository: EmailVerificationTokenRepository;
   passwordResetTokenRepository: PasswordResetTokenRepository;
+  paymentMethodRepository: PaymentMethodRepository;
+  billingHistoryRepository: BillingHistoryRepository;
+  usageMetricsRepository: UsageMetricsRepository;
   passwordHasher: PasswordHasher;
   tokenGenerator: TokenGenerator;
   emailService: EmailService;
@@ -51,6 +59,9 @@ export interface Context {
   regionRepository: RegionRepository;
   regionFavoriteRepository: RegionFavoriteRepository;
   regionPinRepository: RegionPinRepository;
+
+  // Storage service
+  storageService: StorageService;
 
   // Place repositories
   placeRepository: PlaceRepository;
@@ -64,6 +75,9 @@ export interface Context {
 
   // Report repository
   reportRepository: ReportRepository;
+
+  // System settings repository
+  systemSettingsRepository: SystemSettingsRepository;
 
   // Database transaction support
   database: Database | Omit<Database, "$client">;
